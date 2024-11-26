@@ -1,7 +1,7 @@
-# simple-bot
+# enako-bot
 
 ## what's this
-My personal bot and the QQ integrated backend
+My personal bot and the QQ integrated backend, for using naga
 
 ## How to use
 ```bash
