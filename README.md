@@ -12,8 +12,9 @@ Other references to `docker-compose.yaml`
 
 ## tips
 Some of the code references:
-https://github.com/dev-soragoto/simple-bot
-https://github.com/yejue/nonebot-plugin-qqshell
+* https://github.com/dev-soragoto/simple-bot
+
+* https://github.com/yejue/nonebot-plugin-qqshell
 
 auto-naga service:
-https://github.com/Diving-Fish/auto-naga
+* https://github.com/Diving-Fish/auto-naga
