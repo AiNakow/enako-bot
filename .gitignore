@@ -148,6 +148,8 @@ id_rsa.pub
 config/
 qq/
 
+VENV_NONEBOT/
+.DS_STORE
 nonebot/src/plugins/nonebot-plugin-naga_assist/data/
 auto-naga/.gitignore/
 auto-naga/.git/
