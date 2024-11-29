@@ -20,6 +20,7 @@ class MahjongService:
             return result
         
         pic = asyncio.run(convert_html_to_pic(content=content))
+        print(pic)
         print(type(pic))
 
         image = Image.frombytes(mode="RGB", size=(2560, 1440), data=pic)
