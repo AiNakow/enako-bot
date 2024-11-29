@@ -10,6 +10,6 @@ class MahjongService:
         t = jinja_env.get_template("tenhou_paili.html")
         content = t.render(jsPath=os.path.join(template_dir, "1008.js"), typeStr=type, tehaiInputStr=tehai_input)
         print(content)
-        pic = html_to_pic(content)
+        pic = html_to_pic(html=content, device_scale_factor=3)
 
         return pic
