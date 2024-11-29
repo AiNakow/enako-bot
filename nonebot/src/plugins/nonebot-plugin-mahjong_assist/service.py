@@ -2,6 +2,7 @@ from nonebot_plugin_htmlrender import html_to_pic
 from PIL import Image
 import asyncio
 import nest_asyncio
+from io import BytesIO
 
 from .common import *
 from .template_env import *
@@ -19,10 +20,8 @@ class MahjongService:
         content = t.render(jsPath=os.path.join(template_dir, "1008.js"), typeStr=analyse_type, tehaiInputStr=tehai_input)
         
         pic = asyncio.run(convert_html_to_pic(content=content))
-        print(pic)
-        print(type(pic))
 
-        image = Image.frombytes(mode="RGB", size=(2560, 1440), data=pic)
+        image = Image.open(data=BytesIO(pic))
         rect = ((2560 - 1200) / 2, 0, (2560 - 1200) / 2 + 1200, 1400)
         crop_image = image.crop(rect)
         result_pic = crop_image.tobytes()
