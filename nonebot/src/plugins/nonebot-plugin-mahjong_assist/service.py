@@ -1,9 +1,12 @@
 from nonebot_plugin_htmlrender import html_to_pic
 from PIL import Image
 import asyncio
+import nest_asyncio
 
 from .common import *
 from .template_env import *
+
+nest_asyncio.apply()
 
 class MahjongService:
 
@@ -16,8 +19,7 @@ class MahjongService:
             result = await html_to_pic(html=content, type="jpeg", quality=80, device_scale_factor=2) 
             return result
         
-        loop = asyncio.get_event_loop() 
-        pic = loop.run_until_complete(convert_html_to_pic(content=content))
+        pic = asyncio.run(convert_html_to_pic(content=content))
         print(type(pic))
 
         image = Image.frombytes(mode="RGB", size=(2560, 1440), data=pic)
