@@ -69,11 +69,11 @@ async def get_tenhou_paili_handler(args: Annotated[Message, CommandArg()]):
     arg_list = arg_text.split(' ')
     analyse_type = 'q'
     if len(arg_list) == 1 and "标准" not in arg_list[0] and "一般" not in arg_list[0]:
-        pic = await MahjongService.tenhou_paili_analyse(analyse_type, arg_list[0])
+        pic = MahjongService.tenhou_paili_analyse(analyse_type, arg_list[0])
     elif len(arg_list) > 1:
         if "一般" in arg_list[0]:
             analyse_type = 'p'
-        pic = await MahjongService.tenhou_paili_analyse(analyse_type, arg_list[1])
+        pic = MahjongService.tenhou_paili_analyse(analyse_type, arg_list[1])
     else:
         try:
             await get_tenhou_paili.finish(__usage_help__, at_sender=True)

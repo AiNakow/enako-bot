@@ -24,6 +24,7 @@ class MahjongService:
         image = Image.open(BytesIO(pic))
         rect = ((2560 - 1200) / 2, 0, (2560 - 1200) / 2 + 1200, 1400)
         crop_image = image.crop(rect)
-        result_pic = crop_image.tobytes()
+        result_pic = BytesIO()
+        crop_image.save(result_pic, format="jpeg")
 
         return result_pic
