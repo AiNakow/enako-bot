@@ -8,16 +8,15 @@ from .template_env import *
 
 nest_asyncio.apply()
 
+async def convert_html_to_pic(content): 
+    result = await html_to_pic(html=content, type="jpeg", quality=80, device_scale_factor=2) 
+    return result
 class MahjongService:
 
     @staticmethod
     def tenhou_paili_analyse(analyse_type, tehai_input):
         t = jinja_env.get_template("tenhou_paili.html")
         content = t.render(jsPath=os.path.join(template_dir, "1008.js"), typeStr=analyse_type, tehaiInputStr=tehai_input)
-        
-        async def convert_html_to_pic(content): 
-            result = await html_to_pic(html=content, type="jpeg", quality=80, device_scale_factor=2) 
-            return result
         
         pic = asyncio.run(convert_html_to_pic(content=content))
         print(pic)
