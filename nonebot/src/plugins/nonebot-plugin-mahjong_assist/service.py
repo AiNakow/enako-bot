@@ -21,7 +21,7 @@ class MahjongService:
         
         pic = asyncio.run(convert_html_to_pic(content=content))
 
-        image = Image.open(data=BytesIO(pic))
+        image = Image.open(BytesIO(pic))
         rect = ((2560 - 1200) / 2, 0, (2560 - 1200) / 2 + 1200, 1400)
         crop_image = image.crop(rect)
         result_pic = crop_image.tobytes()
