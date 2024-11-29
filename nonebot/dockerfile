@@ -80,6 +80,9 @@ RUN pip install --no-cache-dir nonebot2 \
   python3.11-minimal sensible-utils shared-mime-info systemd systemd-sysv systemd-timesyncd timgm6mb-soundfont ucf \
   va-driver-all vdpau-driver-all x11-common x11-xkb-utils xauth xdg-user-dirs xfonts-base xfonts-encodings \
   xfonts-scalable xfonts-utils xkb-data xserver-common xvfb
+
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
+  && apt update && apt install -y nodejs
   
 COPY . /app/
 
