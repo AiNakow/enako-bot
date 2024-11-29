@@ -921,5 +921,6 @@ function tenhou(type, tehaiInput) {
     }
     var O = tehaiInput
     , ga = type;
-    fa(O)
+    if (O.length)
+        null == O.match(/^(\d+m|\d+p|\d+s|[1234567]+z)*$/) ? document.getElementById("tehai").innerHTML = "<font color=#FF0000 >INVALID QUERY</font>" : O.length && fa();
 }
