@@ -22,13 +22,13 @@ __plugin_meta__ = PluginMetadata(
 
 config = get_plugin_config(Config)
 
-check_enable = on_everyone_close = on_fullmatch("enako", priority=1, block=True)
+check_enable = on_fullmatch("enako", priority=1, block=True)
 plugin_list = on_command("插件列表", priority=10, block=True)
 
 @check_enable.handle()
 async def check_enable_handler():
     try:
-        await check_enable.finish("喵呜", at_sender=True)
+        await check_enable.finish("喵呜")
     except MatcherException:
         raise
     except Exception as e:
