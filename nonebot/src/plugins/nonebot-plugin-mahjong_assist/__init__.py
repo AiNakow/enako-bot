@@ -9,7 +9,7 @@ from nonebot.params import Depends
 from nonebot.exception import MatcherException
 from nonebot.adapters.onebot.v11 import MessageSegment
 
-
+from src.public.register import plugin_register
 from typing import Annotated
 from .config import Config
 from .service import MahjongService
@@ -32,6 +32,7 @@ __usage_help__ = """
 /天凤牌理 <天凤格式手牌>
 """
 
+plugin_register.register("/日麻小助手")
 config = get_plugin_config(Config)
 
 get_help = on_command("日麻小助手", priority=10, block=True)

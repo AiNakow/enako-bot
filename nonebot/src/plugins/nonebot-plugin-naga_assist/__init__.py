@@ -10,6 +10,7 @@ from nonebot.params import CommandArg
 from nonebot.params import Depends
 from nonebot.exception import MatcherException
 
+from src.public.register import plugin_register
 from typing import Annotated
 from .config import Config
 from .event_functions import *
@@ -43,6 +44,8 @@ __usage_help__ = """
 /牌谱分析 天凤 「天凤牌谱链接」 (每半庄消耗50np)
 /牌谱分析 自定义 「自定义牌谱编号」 「小局编号」(每小局消耗10np)
 """
+
+plugin_register.register("/naga小助手")
 
 if not os.path.exists(data_dir):
     os.mkdir(data_dir)
