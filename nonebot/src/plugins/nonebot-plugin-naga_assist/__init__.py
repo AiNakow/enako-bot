@@ -52,11 +52,11 @@ if not os.path.exists(userdata_dir):
     os.mkdir(userdata_dir)
 
 config = get_plugin_config(Config)
-naga_help = on_command("naga帮助", rule=to_me(), priority=10, block=True)
-np_allocate = on_command("np分配", permission=NAGA_ADMIN, rule=to_me(), priority=10, block=True)
-np_query = on_command("np查询", rule=to_me(), priority=10, block=True)
-haihu_transfer = on_command("牌谱格式转换", rule=to_me(), priority=10, block=True)
-haihu_analyse = on_command("牌谱分析", rule=to_me(), priority=10, block=True)
+naga_help = on_command("naga小助手", priority=10, block=True)
+np_allocate = on_command("np分配", permission=NAGA_ADMIN, priority=10, block=True)
+np_query = on_command("np查询", priority=10, block=True)
+haihu_transfer = on_command("牌谱格式转换", priority=10, block=True)
+haihu_analyse = on_command("牌谱分析", priority=10, block=True)
 
 @naga_help.handle()
 async def handle_function():
