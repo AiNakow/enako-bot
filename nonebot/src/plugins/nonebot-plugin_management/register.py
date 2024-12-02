@@ -6,6 +6,6 @@ class PluginRegister:
         self.plugin_help_list.append(plugin_help_command)
         
     def get_plugin_help_list(self):
-        return self.plugin_help_list()
+        return self.plugin_help_list
         
 plugin_register = PluginRegister()
