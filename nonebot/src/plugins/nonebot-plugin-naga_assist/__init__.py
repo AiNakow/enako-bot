@@ -139,7 +139,7 @@ async def handle_function(args: Annotated[Message, CommandArg()], user_id: Annot
     arg_text = args.extract_plain_text()
     if arg_text == "":
         try:
-            await np_allocate.finish(__usage_help__, at_sender=True)
+            await haihu_transfer.finish(__usage_help__, at_sender=True)
         except MatcherException:
             raise
         except Exception as e:
@@ -186,7 +186,7 @@ async def handle_function(args: Annotated[Message, CommandArg()], user_id: Annot
     arg_text = args.extract_plain_text()
     if arg_text == "":
         try:
-            await np_allocate.finish(__usage_help__, at_sender=True)
+            await haihu_analyse.finish(__usage_help__, at_sender=True)
         except MatcherException:
             raise
         except Exception as e:
@@ -196,7 +196,7 @@ async def handle_function(args: Annotated[Message, CommandArg()], user_id: Annot
         np_use = 50
         if userdata_manager.check_user_np(uid=user_id, np=np_use):
             try:
-                await haihu_transfer.send("牌谱正在分析中，可能需要数十秒，请耐心等待", at_sender=True)
+                await haihu_analyse.send("牌谱正在分析中，可能需要数十秒，请耐心等待", at_sender=True)
             except MatcherException:
                 raise
             except Exception as e:
@@ -213,7 +213,7 @@ async def handle_function(args: Annotated[Message, CommandArg()], user_id: Annot
         tmp = arg_list[2].split("-")
         if len(tmp) < 1 or len(tmp) > 2:
             try:
-                await np_allocate.finish(__usage_help__, at_sender=True)
+                await haihu_analyse.finish(__usage_help__, at_sender=True)
             except MatcherException:
                 raise
             except Exception as e:
@@ -225,7 +225,7 @@ async def handle_function(args: Annotated[Message, CommandArg()], user_id: Annot
         np_use = 10 * len(game_list)
         if userdata_manager.check_user_np(uid=user_id, np=np_use):
             try:
-                await haihu_transfer.send("牌谱正在分析中，可能需要数十秒，请耐心等待", at_sender=True)
+                await haihu_analyse.send("牌谱正在分析中，可能需要数十秒，请耐心等待", at_sender=True)
             except MatcherException:
                 raise
             except Exception as e:

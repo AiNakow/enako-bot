@@ -30,6 +30,7 @@ services:
     volumes:
       - /opt/bot-data/.env.prod:/app/.env.prod
       - /opt/bot-data/id_rsa:/app/id_rsa
+      - /opt/bot-data/plugin_data:/app/plugin_data
     environment:
       ENVIRONMENT: prod
     networks:
