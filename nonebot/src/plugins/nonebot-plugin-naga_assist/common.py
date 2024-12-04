@@ -1,6 +1,6 @@
 import os
 
-data_dir = "/app/plugin_data/naga-assist"
+data_dir = "/app/plugin_data/naga_assist"
 userdata_dir = os.path.join(data_dir, "userdata")
 haihu_dir = os.path.join(data_dir, "haihus")
 userdata_file = os.path.join(userdata_dir, "user.db")
