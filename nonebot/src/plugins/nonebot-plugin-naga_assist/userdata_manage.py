@@ -137,8 +137,8 @@ class Userdata_manager():
         return False
     
     def check_user_np(self, uid: str, np: int) -> bool:
-        userdata = self.get_userdata(uid_list=[uid])[0]
-        if userdata["np"] < np:
+        userdata_list = self.get_userdata(uid_list=[uid])
+        if len(userdata_list) == 0 or userdata_list[0]["np"] < np:
             return False
         
         return True
