@@ -39,12 +39,10 @@ def on_self_message(*args,  **kwargs) -> type[Matcher]:
 
 
 on_shell = on_message(rule=shell_role, permission=SHELL_ADMIN, priority=10, block=True)
-on_fake_shell = on_message(rule=fake_shell_role, priority=10, block=False)
-on_close = on_message(
-    rule=shell_role & close_role, priority=1, block=True)
-on_close_all = on_message(
-    rule=shell_role & close_all_role, priority=1, block=True)
-on_everyone = on_startswith("> ", priority=9, block=False)
+on_fake_shell = on_message(rule=fake_shell_role, permission=SHELL_ADMIN, priority=10, block=False)
+on_close = on_message(rule=shell_role & close_role, permission=SHELL_ADMIN, priority=1, block=True)
+on_close_all = on_message(rule=shell_role & close_all_role, permission=SHELL_ADMIN, priority=1, block=True)
+on_everyone = on_startswith("> ", priority=11, block=False)
 on_everyone_close = on_fullmatch("> #close", priority=1, block=True)
 
 
