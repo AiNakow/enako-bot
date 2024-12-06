@@ -11,9 +11,11 @@ from nonebot.internal.rule import Rule
 from nonebot.plugin import on
 from nonebot.plugin import on_startswith
 from nonebot.plugin import on_fullmatch
+from nonebot.plugin import on_message
 from nonebot.internal.matcher import Matcher
 from .services import PanelService
 from .config import config
+from .config import SHELL_ADMIN
 from .shell.ssh_shell import SSHShell
 from .shell.feak_shell import FakeShell
 from .shell.shell import Shell
@@ -36,13 +38,13 @@ def on_self_message(*args,  **kwargs) -> type[Matcher]:
     return on("message_sent", *args, **kwargs)
 
 
-on_shell = on_self_message(rule=shell_role, priority=10, block=False)
-on_fake_shell = on_self_message(rule=fake_shell_role, priority=10, block=False)
-on_close = on_self_message(
+on_shell = on_message(rule=shell_role, permission=SHELL_ADMIN, priority=10, block=True)
+on_fake_shell = on_message(rule=fake_shell_role, priority=10, block=False)
+on_close = on_message(
     rule=shell_role & close_role, priority=1, block=True)
-on_close_all = on_self_message(
+on_close_all = on_message(
     rule=shell_role & close_all_role, priority=1, block=True)
-on_everyone = on_startswith("> ", priority=10, block=False)
+on_everyone = on_startswith("> ", priority=9, block=False)
 on_everyone_close = on_fullmatch("> #close", priority=1, block=True)
 
 
