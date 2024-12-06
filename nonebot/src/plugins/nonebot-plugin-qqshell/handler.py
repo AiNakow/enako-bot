@@ -43,7 +43,7 @@ on_fake_shell = on_message(rule=fake_shell_role, permission=SHELL_ADMIN, priorit
 on_close = on_message(rule=shell_role & close_role, permission=SHELL_ADMIN, priority=1, block=True)
 on_close_all = on_message(rule=shell_role & close_all_role, permission=SHELL_ADMIN, priority=1, block=True)
 on_everyone = on_startswith("> ", priority=11, block=False)
-on_everyone_close = on_fullmatch("> #close", priority=1, block=True)
+on_everyone_close = on_fullmatch("> #close", priority=2, block=True)
 
 
 def exec(shell: Shell, command: str):
