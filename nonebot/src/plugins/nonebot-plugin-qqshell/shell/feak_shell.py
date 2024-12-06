@@ -15,16 +15,17 @@ class FakeShell(Shell):
             self.ssh.connect(hostname, port, username,
                              pkey=paramiko.RSAKey.from_private_key_file(keypath))
             self.shell = self.ssh.invoke_shell()
-            while self.shell.recv_ready():  # type: ignore
-                time.sleep(0.5)
-                data = self.shell.recv(1024 * 32).decode("utf8")  # type: ignore
-                output += data
         except Exception as e:
             self.ssh.close()
 
         output = ""
 
         time.sleep(0.3)
+
+        while self.shell.recv_ready():  # type: ignore
+            time.sleep(0.5)
+            data = self.shell.recv(1024 * 32).decode("utf8")  # type: ignore
+            output += data
 
         ansi_escape = re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')
         output = ansi_escape.sub('', output)
