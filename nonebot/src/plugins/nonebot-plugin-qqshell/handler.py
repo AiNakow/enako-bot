@@ -59,7 +59,7 @@ def exec(shell: Shell, command: str):
 @on_shell.handle()
 async def shell_handler(event: Event, bot: Bot):
 
-    user_id = event.target_id  # type: ignore
+    user_id = event.get_user_id()  # type: ignore
 
     ssh_shell = ssh_shell_dict.setdefault(user_id, SSHShell(hostname=config.qqshell_host, port=config.qqshell_port,
                                                             username=config.qqshell_host_user, keypath=config.qqshell_host_key_path))
@@ -73,7 +73,7 @@ async def shell_handler(event: Event, bot: Bot):
     message = MessageSegment.image(file=pic)
 
     if event.message_type == 'private':  # type: ignore
-        id = event.target_id  # type: ignore
+        id = event.get_user_id()  # type: ignore
 
         await bot.send_private_msg(user_id=id, message=Message(message), auto_escape=False)
         raise FinishedException
@@ -83,7 +83,7 @@ async def shell_handler(event: Event, bot: Bot):
 
 @on_fake_shell.handle()
 async def fake_shell_handler(event: Event, bot: Bot):
-    user_id = event.target_id  # type: ignore
+    user_id = event.get_user_id()  # type: ignore
     fake_shell = fake_shell_dict.setdefault(user_id, FakeShell(hostname=config.qqshell_host, port=config.qqshell_port,
                                                                username=config.qqshell_host_user, keypath=config.qqshell_host_key_path,
                                                                api_key=config.feak_shell_api_key, base_url=config.feak_shell_base_url))
@@ -94,7 +94,7 @@ async def fake_shell_handler(event: Event, bot: Bot):
     message = MessageSegment.image(file=pic)
 
     if event.message_type == 'private':  # type: ignore
-        id = event.target_id  # type: ignore
+        id = event.get_user_id()  # type: ignore
         await bot.send_private_msg(user_id=id, message=Message(message), auto_escape=False)
         raise FinishedException
 
@@ -104,14 +104,14 @@ async def fake_shell_handler(event: Event, bot: Bot):
 @on_close.handle()
 async def close_handler(event: Event, bot: Bot):
 
-    if event.target_id in ssh_shell_dict:  # type: ignore
-        del ssh_shell_dict[event.target_id]  # type: ignore
+    if event.get_user_id() in ssh_shell_dict:  # type: ignore
+        del ssh_shell_dict[event.get_user_id()]  # type: ignore
 
-    if event.target_id in fake_shell_dict:  # type: ignore
-        del fake_shell_dict[event.target_id]  # type: ignore
+    if event.get_user_id() in fake_shell_dict:  # type: ignore
+        del fake_shell_dict[event.get_user_id()]  # type: ignore
 
     if event.message_type == 'private':  # type: ignore
-        id = event.target_id  # type: ignore
+        id = event.get_user_id()  # type: ignore
 
         await bot.send_private_msg(user_id=id, message="已关闭", auto_escape=False)
         raise FinishedException
@@ -126,7 +126,7 @@ async def close_user_handler(event: Event, bot: Bot):
     ssh_shell_dict.clear()
 
     if event.message_type == 'private':  # type: ignore
-        id = event.target_id  # type: ignore
+        id = event.get_user_id()  # type: ignore
 
         await bot.send_private_msg(user_id=id, message="已关闭", auto_escape=False)
         raise FinishedException
