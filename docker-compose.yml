@@ -17,6 +17,7 @@ services:
       # 挂载了第一次必起不来 你有什么头猪吗
       volumes:
          - /opt/bot-data/napcat_config/:/app/napcat/config/
+         - /opt/bot-data/qq/:/app/.config/QQ/
       networks:
         - bot-network
         

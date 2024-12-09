@@ -147,6 +147,7 @@ id_rsa.pub
 .env.napcat
 config/
 qq/
+brew
 
 VENV_NONEBOT/
 .DS_STORE
