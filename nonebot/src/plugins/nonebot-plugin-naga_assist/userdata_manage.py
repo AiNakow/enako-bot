@@ -142,21 +142,4 @@ class Userdata_manager():
             return False
         
         return True
-
-
-# test
-if __name__ == "__main__":
-    userdata_list = [
-        {"uid":"1234567890", "np": 500},
-        {"uid":"0987654321", "np": 2500}
-    ]
-    userdata_manager = Userdata_manager()
-    print(userdata_manager.update_userdata(userdata_list=userdata_list))
-    print(userdata_manager.get_userdata())
-    print(userdata_manager.delete_userdata(["1234567890"]))
-    print(userdata_manager.get_userdata(["0987654321"]))
-    print(userdata_manager.ifexist_userdata("0987654321"))
-    print(userdata_manager.ifexist_userdata("1234567890"))
-
-
     

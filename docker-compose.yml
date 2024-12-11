@@ -7,19 +7,19 @@ networks:
           gateway: "172.20.0.1"
 services:
   napcat:
-      ports:
-        - 127.0.0.1:3001:3001
-        - 3000:3000
-        - 127.0.0.1:6099:6099
-      container_name: napcat
-      restart: always
-      image: mlikiowa/napcat-docker:latest
-      # 挂载了第一次必起不来 你有什么头猪吗
-      volumes:
-         - /opt/bot-data/napcat_config/:/app/napcat/config/
-         - /opt/bot-data/qq/nt_db:/app/.config/QQ/nt_qq/global/nt_db
-      networks:
-        - bot-network
+    ports:
+      - 127.0.0.1:3001:3001
+      - 3000:3000
+      - 127.0.0.1:6099:6099
+    container_name: napcat
+    restart: always
+    image: mlikiowa/napcat-docker:latest
+    # 挂载了第一次必起不来 你有什么头猪吗
+    volumes:
+        - /opt/bot-data/napcat_config/:/app/napcat/config/
+        - /opt/bot-data/qq/nt_db:/app/.config/QQ/nt_qq/global/nt_db
+    networks:
+      - bot-network
         
   nonebot:
     build: 

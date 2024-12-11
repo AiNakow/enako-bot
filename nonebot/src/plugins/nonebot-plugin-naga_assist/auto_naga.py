@@ -200,12 +200,3 @@ class Auto_naga():
 
         return self.__get_order(body=body)
     
-
-if __name__ == "__main__":
-    auto_naga = Auto_naga()
-    print(auto_naga.get_report_list())
-    print(auto_naga.convert_majsoul(majsoul_url="https://game.maj-soul.com/1/?paipu=240529-10a407a6-706a-4dbb-8425-9df23fe80d30_a93549813"))
-    # haihu_file = os.path.join(haihu_dir, "{0}.txt".format(haihu_id))
-    # with open(file=haihu_file, mode="r", encoding="utf-8") as f:
-    #     haihus_origin = f.readlines()
-    # print(auto_naga.analyse_custom(haihu_id=haihu_id, game_list=range(len(haihus_origin))))
