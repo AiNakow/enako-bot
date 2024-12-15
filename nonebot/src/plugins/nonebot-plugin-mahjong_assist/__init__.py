@@ -2,7 +2,6 @@ from nonebot import get_plugin_config
 from nonebot.plugin import PluginMetadata
 from nonebot.permission import SUPERUSER
 from nonebot import on_command
-from nonebot.rule import to_me
 from nonebot.adapters import Message
 from nonebot.params import CommandArg
 from nonebot.params import Depends
@@ -25,14 +24,14 @@ __plugin_meta__ = PluginMetadata(
 )
 
 __usage_help__ = """
-日麻小助手
+/日麻小助手
 请按照如下格式发送指令：
 /面麻计分器
 /天凤牌理 <标准形/一般形> <天凤格式手牌>
 /天凤牌理 <天凤格式手牌>
 """
 
-plugin_register.register("/日麻小助手")
+plugin_register.register(__usage_help__)
 config = get_plugin_config(Config)
 
 get_help = on_command("日麻小助手", priority=10, block=True)
