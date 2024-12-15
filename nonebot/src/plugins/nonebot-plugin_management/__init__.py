@@ -23,7 +23,7 @@ __plugin_meta__ = PluginMetadata(
 config = get_plugin_config(Config)
 
 check_enable = on_fullmatch("enako", priority=1, block=True)
-plugin_list = on_command("插件列表", priority=10, block=True)
+plugin_list = on_command("help", priority=10, block=True)
 
 @check_enable.handle()
 async def check_enable_handler():
