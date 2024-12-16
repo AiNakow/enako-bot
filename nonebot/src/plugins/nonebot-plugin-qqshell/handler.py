@@ -67,7 +67,7 @@ def exec(shell: Shell, command: str):
         raise FinishedException
     return shell.get_output()
 
-on_help.handle()
+@on_help.handle()
 async def help_handler():
     try:
         await on_help.finish(__usage_help__, at_sender=True)
