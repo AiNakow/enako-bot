@@ -36,9 +36,9 @@ async def check_enable_handler():
 
 @plugin_list.handle()
 async def get_plgin_list_handler():
-    message = "可用的插件帮助：\n"
+    message = "\n可用的插件帮助："
     for plugin in plugin_register.get_plugin_help_list():
-        message += plugin + "\n"
+        message += plugin.strip('\n') + "\n"
         
     message = message.strip('\n')
     try:

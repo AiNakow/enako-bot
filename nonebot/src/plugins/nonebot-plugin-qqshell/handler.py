@@ -5,6 +5,7 @@ from nonebot.permission import SUPERUSER
 from nonebot.log import logger
 from nonebot_plugin_htmlrender import html_to_pic
 from nonebot.exception import FinishedException
+from nonebot.exception import MatcherException
 from nonebot.adapters.onebot.v11.bot import Bot
 from nonebot.adapters import Event
 from nonebot.internal.rule import Rule
@@ -12,7 +13,9 @@ from nonebot.plugin import on
 from nonebot.plugin import on_startswith
 from nonebot.plugin import on_fullmatch
 from nonebot.plugin import on_message
+from nonebot.plugin import on_command
 from nonebot.internal.matcher import Matcher
+from src.public.register import plugin_register
 from .services import PanelService
 from .config import config
 from .config import SHELL_ADMIN
@@ -21,6 +24,15 @@ from .shell.feak_shell import FakeShell
 from .shell.shell import Shell
 from typing import Dict
 import html
+
+__usage_help__ = """
+/qqshell
+> 「命令」 发送一条shell命令，可能会执行，也可能会被辱骂
+> #close  关闭当前会话
+> #closeall 关闭所有会话（仅管理员）
+"""
+
+plugin_register.register(__usage_help__)
 
 time_stamp = time.time()
 
@@ -37,7 +49,7 @@ def on_self_message(*args,  **kwargs) -> type[Matcher]:
     kwargs.setdefault("block", True)
     return on("message_sent", *args, **kwargs)
 
-
+on_help = on_command("qqshell", priority=10, block=False)
 on_shell = on_message(rule=shell_role, permission=SHELL_ADMIN, priority=10, block=True)
 on_fake_shell = on_message(rule=fake_shell_role, permission=SHELL_ADMIN, priority=10, block=False)
 on_close = on_message(rule=shell_role & close_role, permission=SHELL_ADMIN, priority=1, block=True)
@@ -55,6 +67,14 @@ def exec(shell: Shell, command: str):
         raise FinishedException
     return shell.get_output()
 
+on_help.handle()
+async def help_handler():
+    try:
+        await on_help.finish(__usage_help__, at_sender=True)
+    except MatcherException:
+        raise
+    except Exception as e:
+        pass 
 
 @on_shell.handle()
 async def shell_handler(event: Event, bot: Bot):
