@@ -49,7 +49,7 @@ def on_self_message(*args,  **kwargs) -> type[Matcher]:
     kwargs.setdefault("block", True)
     return on("message_sent", *args, **kwargs)
 
-on_help = on_command("qqshell", priority=10, block=False)
+on_help = on_command("qqshell", priority=10, block=True)
 on_shell = on_message(rule=shell_role, permission=SHELL_ADMIN, priority=10, block=True)
 on_fake_shell = on_message(rule=fake_shell_role, permission=SHELL_ADMIN, priority=10, block=False)
 on_close = on_message(rule=shell_role & close_role, permission=SHELL_ADMIN, priority=1, block=True)
