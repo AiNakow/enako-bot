@@ -28,9 +28,9 @@ def is_equal(msg1: Message, msg2: Message):
                     continue
                 
                 if msg1[i].type == msg2[i].type == "forward":
-                    print("msg1: ", msg1[i].data["content"])
-                    print("msg2: ", msg2[i].data["content"])
-                    print(msg1[i].data["content"] == msg2[i].data["content"])
+                    # print("msg1: ", msg1[i].data["content"])
+                    # print("msg2: ", msg2[i].data["content"])
+                    # print(msg1[i].data["content"] == msg2[i].data["content"])
                     if msg1[i].data["content"] == msg2[i].data["content"]:
                         continue
                 flag = False
@@ -62,10 +62,8 @@ async def repeat_message_handler(event: Event):
         return
     
     group_id = str(event.group_id)
-    print(event.raw_message)
+    # print(event.raw_message)
     message = event.get_message()
-    if message[0].type == "forward":
-        print(message[0].data["content"])
     with repeat_dict_lock:
         if group_id not in repeat_dict.keys():
             repeat_dict[group_id] = {
