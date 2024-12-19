@@ -77,6 +77,7 @@ async def repeat_message_handler(event: Event):
     with repeat_dict_lock:
         if group_id not in repeat_dict.keys():
             repeat_dict[group_id] = {
+                "last_repeat": None,
                 "message": message,
                 "count": 1,
                 "time": 0
@@ -89,12 +90,13 @@ async def repeat_message_handler(event: Event):
         if event.time - repeat_dict[group_id]["time"] < config.repeat_cd:
             return
         
+        # 不复读重复内容
+        if is_equal(message, repeat_dict[group_id]["last_repeat"]):
+            return
+        
         if not is_equal(message, repeat_dict[group_id]["message"]):
-            repeat_dict[group_id] = {
-                "message": message,
-                "count": 1,
-                "time": 0
-            }
+            repeat_dict[group_id]["message"] = message
+            repeat_dict[group_id]["count"] = 1
             return
         
         if is_equal(message, repeat_dict[group_id]["message"]):
@@ -103,11 +105,9 @@ async def repeat_message_handler(event: Event):
         if repeat_dict[group_id]["count"] < config.repeat_threshold:
             return
         
-        repeat_dict[group_id] = {
-            "message": None,
-            "count": 0,
-            "time": event.time
-        }
+        repeat_dict[group_id]["last_repeat"] = message
+        repeat_dict[group_id]["message"] = None
+        repeat_dict[group_id]["count"] = 0
         
         try:
             await repeat_message.finish(event.get_message())
