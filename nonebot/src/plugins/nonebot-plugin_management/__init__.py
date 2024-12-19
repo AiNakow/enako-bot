@@ -23,7 +23,6 @@ __plugin_meta__ = PluginMetadata(
 )
 
 config = get_plugin_config(Config)
-neko_count = 0
 
 check_enable = on_fullmatch("enako", priority=1, block=True)
 echo_neko = on_message(priority=1, block=False)
@@ -37,21 +36,6 @@ async def check_enable_handler():
         raise
     except Exception as e:
         pass
-    
-@echo_neko.handle()
-async def echo_neko_handler(event: Event):
-    if event.get_plaintext() == "喵呜":
-        neko_count += 1
-    else:
-        neko_count = 0
-    if neko_count == 2:
-        neko_count = 0
-        try:
-            await echo_neko.finish("喵呜")
-        except MatcherException:
-            raise
-        except Exception as e:
-            pass
 
 @plugin_list.handle()
 async def get_plgin_list_handler():
