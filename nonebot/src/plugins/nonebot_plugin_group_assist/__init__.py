@@ -58,6 +58,8 @@ async def repeat_message_handler(event: Event):
     group_id = str(event.group_id)
     print(event.raw_message)
     message = event.get_message()
+    if message[0].type == "forward":
+        print(message[0].data["content"])
     with repeat_dict_lock:
         if group_id not in repeat_dict.keys():
             repeat_dict[group_id] = {
