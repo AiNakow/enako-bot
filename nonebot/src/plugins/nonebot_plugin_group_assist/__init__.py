@@ -20,14 +20,19 @@ repeat_message = on_message(priority=1, block=False)
 
 @repeat_message.handle()
 async def repeat_message_handler(event: Event):
-    print(repeat_dict)
-    if event.self_id == event.user_id:
-        return
-    
     if event.message_type != "group":
         return
     
     group_id = str(event.group_id)
+    if event.self_id == event.user_id:
+        repeat_dict[group_id] = {
+            "message": None,
+            "count": 0
+        }
+        return
+    
+    print(event.raw_message)
+    
     if group_id not in repeat_dict.keys():
         repeat_dict[group_id] = {
             "message": event.raw_message,
