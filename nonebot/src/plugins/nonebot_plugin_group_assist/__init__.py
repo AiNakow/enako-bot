@@ -26,7 +26,7 @@ def is_equal(msg1: Message, msg2: Message):
     print("mgs2 length: ", len(msg2))
     if len(msg1) == len(msg2):
         for i in range(len(msg1)):
-            if msg1[i].type == msg2[i].type == "image" and msg1[i].data["file_size"] == msg2[i].data["file_size"]:
+            if msg1[i].type == msg2[i].type == "image" and msg1[i].data["file_unique"] == msg2[i].data["file_unique"]:
                 return True
     
     return False
@@ -36,6 +36,8 @@ repeat_message = on_message(priority=1, block=False)
 
 @on_message_sent.handle()
 async def on_message_sent_handler(event:Event):    
+    if event.message_type != "group":
+        return
     print("-----self message: ", event.raw_message)
     group_id = str(event.group_id)
     with repeat_dict_lock:
