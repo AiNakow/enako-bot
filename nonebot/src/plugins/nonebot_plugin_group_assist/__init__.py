@@ -22,7 +22,7 @@ def is_equal(msg1: Message, msg2: Message):
         return False
     if msg1 == msg2:
         return True
-    print("mgs1 length: %d", len(msg1))
+    print("mgs1 length: ", len(msg1))
     if len(msg1) == len(msg1):
         for i in range(len(msg1)):
             if msg1[0].type == msg1[i].type == "image" and msg1[i].data["file_size"] == msg2[0].data["file_size"]:
@@ -38,7 +38,7 @@ async def on_message_sent_handler(event:Event):
     if event.message_type != "group":
         return
     
-    print(event.raw_message)
+    print("-----self message: ", event.raw_message)
     group_id = str(event.group_id)
     with repeat_dict_lock:
         if event.self_id == event.user_id:
