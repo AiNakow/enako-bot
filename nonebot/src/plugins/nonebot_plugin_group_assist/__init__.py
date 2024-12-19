@@ -38,6 +38,7 @@ async def on_message_sent_handler(event:Event):
     if event.message_type != "group":
         return
     
+    print(event.raw_message)
     group_id = str(event.group_id)
     with repeat_dict_lock:
         if event.self_id == event.user_id:
@@ -52,10 +53,9 @@ async def repeat_message_handler(event: Event):
         return
     
     group_id = str(event.group_id)
+    print(event.raw_message)
+    message = event.get_message()
     with repeat_dict_lock:
-        print(event.raw_message)
-        message = event.get_message()
-        
         if group_id not in repeat_dict.keys():
             repeat_dict[group_id] = {
                 "message": message,
