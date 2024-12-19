@@ -69,7 +69,7 @@ async def repeat_message_handler(event: Event):
             repeat_dict[group_id] = {
                 "message": message,
                 "count": 1,
-                "time": event.time
+                "time": 0
             }
             return
         
@@ -81,7 +81,7 @@ async def repeat_message_handler(event: Event):
             repeat_dict[group_id] = {
                 "message": message,
                 "count": 1,
-                "time": event.time
+                "time": 0
             }
             return
         
@@ -94,7 +94,7 @@ async def repeat_message_handler(event: Event):
         repeat_dict[group_id] = {
             "message": None,
             "count": 0,
-            "time": 0
+            "time": event.time
         }
         
         try:
