@@ -1,5 +1,6 @@
 from nonebot import get_plugin_config
 from nonebot import on_message
+from nonebot import on
 from nonebot.plugin import PluginMetadata
 from nonebot.adapters import Event, Message, Bot
 from nonebot.exception import MatcherException
@@ -17,15 +18,19 @@ __plugin_meta__ = PluginMetadata(
 config = get_plugin_config(Config)
 
 def is_equal(msg1: Message, msg2: Message):
+    if msg1 is None or msg2 is None:
+        return False
     if msg1 == msg2:
         return True
-    if len(msg1) == len(msg1) and msg1[0].type == msg1[0].type == "image":
-        if msg1[0].data["file_size"] == msg2[0].data["file_size"]:
-            return True
+    print("mgs1 length: %d", len(msg1))
+    if len(msg1) == len(msg1):
+        for i in range(len(msg1)):
+            if msg1[0].type == msg1[i].type == "image" and msg1[i].data["file"] == msg2[0].data["file"]:
+                return True
     
     return False
 
-repeat_message = on_message(priority=1, block=False)
+repeat_message = on(priority=1, block=False)
 
 @repeat_message.handle()
 async def repeat_message_handler(event: Event):
@@ -40,7 +45,7 @@ async def repeat_message_handler(event: Event):
         }
         return
     
-    print(event.raw_message)
+    print(message)
     message = event.get_message()
     
     if group_id not in repeat_dict.keys():
