@@ -26,6 +26,8 @@ def is_equal(msg1: Message, msg2: Message):
             if msg1[i] != msg2[i]:
                 if msg1[i].type == msg2[i].type == "image" and msg1[i].data["file_unique"] == msg2[i].data["file_unique"]:
                     continue
+                if msg1[i].type == msg2[i].type == "forward" and msg1[i].data["content"] == msg2[i].data["content"]:
+                    continue
                 flag = False
                 break
     else:
