@@ -55,11 +55,15 @@ async def on_message_sent_handler(event:Event):
     group_id = str(event.group_id)
     with repeat_dict_lock:
         if event.self_id == event.user_id:
-            repeat_dict[group_id] = {
-                "message": None,
-                "count": 0,
-                "time": 0
-            }
+            if group_id not in repeat_dict.keys():
+                repeat_dict[group_id] = {
+                    "message": None,
+                    "count": 0,
+                    "time": 0
+                }
+            else:
+                repeat_dict[group_id]["message"] = None
+                repeat_dict[group_id]["count"] = 0
 
 @repeat_message.handle()
 async def repeat_message_handler(event: Event):
