@@ -53,7 +53,7 @@ async def repeat_message_handler(event: Event):
     
     group_id = str(event.group_id)
     with repeat_dict_lock:
-        print(message)
+        print(event.raw_message)
         message = event.get_message()
         
         if group_id not in repeat_dict.keys():
