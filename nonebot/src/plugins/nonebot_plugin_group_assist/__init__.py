@@ -108,6 +108,8 @@ async def repeat_message_handler(event: Event):
         repeat_dict[group_id]["last_repeat"] = message
         repeat_dict[group_id]["message"] = None
         repeat_dict[group_id]["count"] = 0
+        repeat_dict[group_id]["time"] = event.time
+
         
         try:
             await repeat_message.finish(event.get_message())
