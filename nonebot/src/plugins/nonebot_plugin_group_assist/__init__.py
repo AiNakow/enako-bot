@@ -1,7 +1,7 @@
 from nonebot import get_plugin_config
 from nonebot import on_message
 from nonebot.plugin import PluginMetadata
-from nonebot.adapters import Event
+from nonebot.adapters import Event, Message, Bot
 from nonebot.exception import MatcherException
 
 from .config import Config
@@ -15,6 +15,15 @@ __plugin_meta__ = PluginMetadata(
 )
 
 config = get_plugin_config(Config)
+
+def is_equal(msg1: Message, msg2: Message):
+    if msg1 == msg2:
+        return True
+    if len(msg1) == len(msg1) and msg1[0].type == msg1[0].type == "image":
+        if msg1[0].data["file_size"] == msg2[0].data["file_size"]:
+            return True
+    
+    return False
 
 repeat_message = on_message(priority=1, block=False)
 
@@ -32,22 +41,23 @@ async def repeat_message_handler(event: Event):
         return
     
     print(event.raw_message)
+    message = event.get_message()
     
     if group_id not in repeat_dict.keys():
         repeat_dict[group_id] = {
-            "message": event.raw_message,
+            "message": message,
             "count": 1
         }
         return
     
-    if event.raw_message != repeat_dict[group_id]["message"]:
+    if not is_equal(message, repeat_dict[group_id]["message"]):
         repeat_dict[group_id] = {
-            "message": event.raw_message,
+            "message": message,
             "count": 1
         }
         return
     
-    if event.raw_message == repeat_dict[group_id]["message"]:
+    if is_equal(message, repeat_dict[group_id]["message"]):
         repeat_dict[group_id]["count"] += 1
         
     if repeat_dict[group_id]["count"] < config.repeat_threshold:
