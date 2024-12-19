@@ -25,7 +25,7 @@ def is_equal(msg1: Message, msg2: Message):
     print("mgs1 length: %d", len(msg1))
     if len(msg1) == len(msg1):
         for i in range(len(msg1)):
-            if msg1[0].type == msg1[i].type == "image" and msg1[i].data["file"] == msg2[0].data["file"]:
+            if msg1[0].type == msg1[i].type == "image" and msg1[i].data["file_size"] == msg2[0].data["file_size"]:
                 return True
     
     return False
