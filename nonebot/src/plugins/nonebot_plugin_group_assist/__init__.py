@@ -42,10 +42,10 @@ async def repeat_message_handler(event: Event):
         }
         return
     
-    if event.raw_message in repeat_dict[group_id]:
+    if event.raw_message == repeat_dict[group_id]["message"]:
         repeat_dict[group_id]["count"] += 1
         
-    if repeat_dict[group_id]["count"] != config.repeat_threshold:
+    if repeat_dict[group_id]["count"] < config.repeat_threshold:
         return
     
     repeat_dict[group_id] = {
