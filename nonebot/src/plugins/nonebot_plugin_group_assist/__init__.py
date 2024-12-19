@@ -10,7 +10,7 @@ from .common import repeat_dict, repeat_dict_lock
 
 __plugin_meta__ = PluginMetadata(
     name="nonebot-plugin-group-assist",
-    description="",
+    description="群聊小助手，包含复读机等功能",
     usage="",
     config=Config,
 )
@@ -52,7 +52,8 @@ async def on_message_sent_handler(event:Event):
         if event.self_id == event.user_id:
             repeat_dict[group_id] = {
                 "message": None,
-                "count": 0
+                "count": 0,
+                "time": 0
             }
 
 @repeat_message.handle()
@@ -69,14 +70,20 @@ async def repeat_message_handler(event: Event):
         if group_id not in repeat_dict.keys():
             repeat_dict[group_id] = {
                 "message": message,
-                "count": 1
+                "count": 1,
+                "time": event.time
             }
+            return
+        
+        # 冷却时间
+        if event.time - repeat_dict[group_id]["time"] < config.repeat_cd:
             return
         
         if not is_equal(message, repeat_dict[group_id]["message"]):
             repeat_dict[group_id] = {
                 "message": message,
-                "count": 1
+                "count": 1,
+                "time": event.time
             }
             return
         
@@ -88,7 +95,8 @@ async def repeat_message_handler(event: Event):
         
         repeat_dict[group_id] = {
             "message": None,
-            "count": 0
+            "count": 0,
+            "time": 0
         }
         
         try:
