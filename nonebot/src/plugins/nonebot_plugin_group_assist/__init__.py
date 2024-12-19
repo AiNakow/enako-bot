@@ -20,14 +20,18 @@ config = get_plugin_config(Config)
 def is_equal(msg1: Message, msg2: Message):
     if msg1 is None or msg2 is None:
         return False
-    if msg1 == msg2:
-        return True
+    flag = True
     if len(msg1) == len(msg2):
         for i in range(len(msg1)):
-            if msg1[i].type == msg2[i].type == "image" and msg1[i].data["file_unique"] == msg2[i].data["file_unique"]:
-                return True
-    
-    return False
+            if msg1[i] != msg2[i]:
+                if msg1[i].type == msg2[i].type == "image" and msg1[i].data["file_unique"] == msg2[i].data["file_unique"]:
+                    continue
+                flag = False
+                break
+    else:
+        flag = False
+        
+    return flag
 
 on_message_sent = on("message_sent", priority=1, block=False)
 repeat_message = on_message(priority=1, block=False)
