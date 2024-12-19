@@ -6,7 +6,7 @@ from nonebot.adapters import Event, Message, Bot
 from nonebot.exception import MatcherException
 
 from .config import Config
-from .common import repeat_dict
+from .common import repeat_dict, repeat_dict_lock
 
 __plugin_meta__ = PluginMetadata(
     name="nonebot-plugin-group-assist",
@@ -30,7 +30,21 @@ def is_equal(msg1: Message, msg2: Message):
     
     return False
 
-repeat_message = on(priority=1, block=False)
+on_message_sent = on("message_sent", priority=1, block=False)
+repeat_message = on_message(priority=1, block=False)
+
+@on_message_sent.handle()
+async def on_message_sent_handler(event:Event):
+    if event.message_type != "group":
+        return
+    
+    group_id = str(event.group_id)
+    with repeat_dict_lock:
+        if event.self_id == event.user_id:
+            repeat_dict[group_id] = {
+                "message": None,
+                "count": 0
+            }
 
 @repeat_message.handle()
 async def repeat_message_handler(event: Event):
@@ -38,44 +52,38 @@ async def repeat_message_handler(event: Event):
         return
     
     group_id = str(event.group_id)
-    if event.self_id == event.user_id:
+    with repeat_dict_lock:
+        print(message)
+        message = event.get_message()
+        
+        if group_id not in repeat_dict.keys():
+            repeat_dict[group_id] = {
+                "message": message,
+                "count": 1
+            }
+            return
+        
+        if not is_equal(message, repeat_dict[group_id]["message"]):
+            repeat_dict[group_id] = {
+                "message": message,
+                "count": 1
+            }
+            return
+        
+        if is_equal(message, repeat_dict[group_id]["message"]):
+            repeat_dict[group_id]["count"] += 1
+            
+        if repeat_dict[group_id]["count"] < config.repeat_threshold:
+            return
+        
         repeat_dict[group_id] = {
             "message": None,
             "count": 0
         }
-        return
-    
-    print(message)
-    message = event.get_message()
-    
-    if group_id not in repeat_dict.keys():
-        repeat_dict[group_id] = {
-            "message": message,
-            "count": 1
-        }
-        return
-    
-    if not is_equal(message, repeat_dict[group_id]["message"]):
-        repeat_dict[group_id] = {
-            "message": message,
-            "count": 1
-        }
-        return
-    
-    if is_equal(message, repeat_dict[group_id]["message"]):
-        repeat_dict[group_id]["count"] += 1
         
-    if repeat_dict[group_id]["count"] < config.repeat_threshold:
-        return
-    
-    repeat_dict[group_id] = {
-        "message": None,
-        "count": 0
-    }
-    
-    try:
-        await repeat_message.finish(event.get_message())
-    except MatcherException:
-        raise
-    except Exception as e:
-        pass 
+        try:
+            await repeat_message.finish(event.get_message())
+        except MatcherException:
+            raise
+        except Exception as e:
+            pass 
