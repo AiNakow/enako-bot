@@ -40,8 +40,13 @@ def is_equal(msg1: Message, msg2: Message):
         
     return flag
 
+async def is_whitelisted(event: Event):
+    if event.message_type == "group":
+        return str(event.group_id) in config.repeat_white_list
+    return True
+
 on_message_sent = on("message_sent", priority=1, block=False)
-repeat_message = on_message(priority=1, block=False)
+repeat_message = on_message(rule=is_whitelisted, priority=1, block=False)
 
 @on_message_sent.handle()
 async def on_message_sent_handler(event:Event):    
@@ -58,6 +63,7 @@ async def on_message_sent_handler(event:Event):
 
 @repeat_message.handle()
 async def repeat_message_handler(event: Event):
+    
     if event.message_type != "group":
         return
     
@@ -74,6 +80,8 @@ async def repeat_message_handler(event: Event):
             return
         
         # 冷却时间
+        print("event.time: ", event.time)
+        print("last time: ", repeat_dict[group_id]["time"])
         if event.time - repeat_dict[group_id]["time"] < config.repeat_cd:
             return
         
