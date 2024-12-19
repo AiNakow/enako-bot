@@ -20,6 +20,7 @@ repeat_message = on_message(priority=1, block=False)
 
 @repeat_message.handle()
 async def repeat_message_handler(event: Event):
+    print(repeat_dict)
     if event.self_id == event.user_id:
         return
     
