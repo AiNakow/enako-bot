@@ -67,7 +67,6 @@ async def on_message_sent_handler(event:Event):
 
 @repeat_message.handle()
 async def repeat_message_handler(event: Event):
-    
     if event.message_type != "group":
         return
     
@@ -98,8 +97,7 @@ async def repeat_message_handler(event: Event):
             repeat_dict[group_id]["message"] = message
             repeat_dict[group_id]["count"] = 1
             return
-        
-        if is_equal(message, repeat_dict[group_id]["message"]):
+        else: 
             repeat_dict[group_id]["count"] += 1
             
         if repeat_dict[group_id]["count"] < config.repeat_threshold:
