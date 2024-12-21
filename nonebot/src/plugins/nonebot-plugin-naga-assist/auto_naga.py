@@ -134,10 +134,12 @@ class Auto_naga():
         
         try:
             response = httpx.post(url=api_interface, headers=headers, data=json.dumps(body), timeout=100)
-        except:
+        except httpx.HTTPError as exc:
+            print(exc)
             return {"status": 400}
         response_json = response.json()
         if response_json["status"] != 200:
+            print(response_json)
             return {"status": 400}
 
         haihu_data = response_json["message"]
