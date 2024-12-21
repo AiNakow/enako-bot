@@ -302,7 +302,7 @@ async function parse_majsoul_url(url) {
 
             global.majsoul_free = true;
             await page_majsoul.close();
-            if (timeout === 60) {
+            if (timeout === 120) {
                 return {
                     status: 400,
                     message: "timeout"
