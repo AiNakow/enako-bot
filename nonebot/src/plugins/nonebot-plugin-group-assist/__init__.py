@@ -4,6 +4,7 @@ from nonebot import on
 from nonebot.plugin import PluginMetadata
 from nonebot.adapters import Event, Message, Bot
 from nonebot.exception import MatcherException
+from nonebot.internal.matcher import Matcher
 
 from .config import Config
 from .common import repeat_dict, repeat_dict_lock
@@ -16,6 +17,10 @@ __plugin_meta__ = PluginMetadata(
 )
 
 config = get_plugin_config(Config)
+
+def on_self_message(*args,  **kwargs) -> type[Matcher]:
+    kwargs.setdefault("block", True)
+    return on("message_sent", *args, **kwargs)
 
 def is_equal(msg1: Message, msg2: Message):
     if msg1 is None or msg2 is None:

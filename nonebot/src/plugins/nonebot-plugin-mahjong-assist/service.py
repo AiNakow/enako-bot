@@ -15,7 +15,7 @@ async def convert_html_to_pic(content):
 class MahjongService:
 
     @staticmethod
-    def tenhou_paili_analyse(analyse_type, tehai_input):
+    def tenhou_paili_analyse(analyse_type, tehai_input) -> BytesIO:
         t = jinja_env.get_template("tenhou_paili.html")
         content = t.render(jsPath=os.path.join(template_dir, "1008.js"), typeStr=analyse_type, tehaiInputStr=tehai_input)
         
@@ -28,3 +28,13 @@ class MahjongService:
         crop_image.save(result_pic, format="jpeg")
 
         return result_pic
+    
+    @staticmethod
+    def gsz_userinfo_get(username) -> BytesIO:
+        t = jinja_env.get_template("https://gsz.rmlinking.com/#/pages/score/score?name=" + username)
+        content = t.render()
+        
+        pic = asyncio.run(convert_html_to_pic(content=content))
+        
+        return pic
+        

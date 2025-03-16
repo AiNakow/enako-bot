@@ -13,23 +13,23 @@ from typing import Annotated
 from .config import Config
 from .service import MahjongService
 
-__plugin_meta__ = PluginMetadata(
-    name="nonebot-plugin-mahjong_assist",
-    description="日麻小助手",
-    usage=(
-        "/面麻计分器"
-        "/天凤牌理 <天凤格式手牌>"
-        ),
-    config=Config,
-)
-
 __usage_help__ = """
 /日麻小助手
 请按照如下格式发送指令：
 /面麻计分器
 /天凤牌理 <标准形/一般形> <天凤格式手牌>
 /天凤牌理 <天凤格式手牌>
+/吃鱼 <公式站昵称>
 """
+
+__plugin_meta__ = PluginMetadata(
+    name="nonebot-plugin-mahjong_assist",
+    description="日麻小助手",
+    usage=(
+        __usage_help__
+        ),
+    config=Config,
+)
 
 plugin_register.register(__usage_help__)
 config = get_plugin_config(Config)
@@ -37,6 +37,7 @@ config = get_plugin_config(Config)
 get_help = on_command("日麻小助手", priority=10, block=True)
 get_mahjong_helper = on_command("面麻计分器", priority=10, block=True)
 get_tenhou_paili = on_command("天凤牌理", priority=10, block=True)
+get_gsz_userinfo = on_command("吃鱼", priority=10, block=True)
 
 @get_help.handle()
 async def get_help_handler():
@@ -50,7 +51,7 @@ async def get_help_handler():
 @get_mahjong_helper.handle()
 async def get_mahjong_helper_handler():
     try:
-        await get_help.finish("https://dev-soragoto.github.io/mahjong_helper", at_sender=True)
+        await get_mahjong_helper.finish("https://dev-soragoto.github.io/mahjong_helper", at_sender=True)
     except MatcherException:
         raise
     except Exception as e:
@@ -85,10 +86,31 @@ async def get_tenhou_paili_handler(args: Annotated[Message, CommandArg()]):
         
     # run 1008.js to get result
     try:
-        await get_help.finish(message=message, at_sender=True)
+        await get_tenhou_paili.finish(message=message, at_sender=True)
     except MatcherException:
         raise
     except Exception as e:
         pass 
 
-
+@get_gsz_userinfo.handle()
+async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()]):
+    arg_text = args.extract_plain_text()
+    if arg_text == "":
+        try:
+            await get_gsz_userinfo.finish(__usage_help__, at_sender=True)
+        except MatcherException:
+            raise
+        except Exception as e:
+            pass
+    
+    arg_list = arg_text.split(' ')
+    username = arg_list[0]
+    pic = MahjongService.gsz_userinfo_get(username)
+    message = MessageSegment.image(file=pic)
+    
+    try:
+        await get_gsz_userinfo.finish(message=message, at_sender=True)
+    except MatcherException:
+        raise
+    except Exception as e:
+        pass
