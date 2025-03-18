@@ -45,7 +45,6 @@ class MahjongService:
                 raise Exception("获取basic_data失败")
             custom_id= basic_data['data']['id']
             qq = basic_data['data']['qq']
-            print(qq)
             tech_data = httpx.get(API_ENDPOINTS["tech"] + f'?customerId={custom_id}').json()
             if tech_data['code'] != 200:
                 raise Exception("获取tech_data失败")
