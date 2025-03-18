@@ -221,7 +221,7 @@
             statElements[0].textContent = data.maxPoint;
             statElements[1].textContent = data.avgPoint;
 
-            if (data.rankRule.rank in ["九段", "十段"]) {
+            if (data.rankRule.round === null){
                 statElements[2].textContent = "已通关";
                 statElements[3].textContent = "已通关";
                 const fastestConditionText = `🔹 当前最快的升段条件是：恭喜你成功通关！`;
