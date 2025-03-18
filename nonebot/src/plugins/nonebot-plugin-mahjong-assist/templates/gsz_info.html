@@ -260,6 +260,7 @@
 
                 const latestGames = recentGames.slice(-requiredGames);
                 let currentSum = latestGames.reduce((sum, pos) => sum + pos, 0);
+                let oldCurrentSum = currentSum;
                 // 如果局数不足
                 if (recentGames.length < requiredGames) {
                     // 计算需要填充的局数
@@ -273,7 +274,7 @@
 
                 // 检查是否已经满足升段条件
                 if (currentSum <= maxAllowedSum) {
-                    targetSum = maxAllowedSum - currentSum;
+                    targetSum = maxAllowedSum - oldCurrentSum;
                 } else {
                     // 从最老的一局开始尝试替换为1位
                     let replacedCount = 0;
@@ -298,7 +299,7 @@
                 
                 // 获取最近requiredGames局的顺位数据
                 currentSum = latestGames.reduce((sum, pos) => sum + pos, 0);
-                let oldCurrentSum = currentSum;
+                oldCurrentSum = currentSum;
                 if (recentGames.length < requiredGames) {
                     // 如果还未满足局数要求
                     const remainingGames = requiredGames - recentGames.length;
