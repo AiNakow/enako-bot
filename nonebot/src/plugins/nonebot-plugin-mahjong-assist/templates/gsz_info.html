@@ -363,11 +363,11 @@
             const normalizeValue = (value, max = 1) => Math.min(100, Math.max(0, (value / max) * 100));
             
             const normalizedData = [
-                normalizeValue(techData.fire, 50000),    // 火力
+                normalizeValue(techData.fire - 40000, 6000),    // 火力
                 normalizeValue(techData.defense, 0.9),        // 防守
                 normalizeValue(techData.stabilize, 0.6),      // 稳定
                 normalizeValue(techData.lucky, 3),       // 运势
-                normalizeValue(techData.tech, 2000),     // 技术
+                normalizeValue(techData.tech - 1500, 400),     // 技术
                 normalizeValue(techData.attack, 0.3)          // 进攻
             ];
 

@@ -18,7 +18,7 @@ def test_template():
             "rateList": 'https://gsz.rmlinking.com/gszapi/customer/getCustomerRateList'
         }
 
-    username = 'Aisakaw'
+    username = '铃木大介'
     basic_data = httpx.get(API_ENDPOINTS["basic"] + f'?name={username}').json()
     if basic_data['code'] != 200:
         return None
