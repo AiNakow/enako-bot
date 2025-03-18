@@ -220,126 +220,139 @@
             const statElements = previewCard.querySelectorAll('.text-2xl.font-bold.text-\\[\\#1e40af\\]');
             statElements[0].textContent = data.maxPoint;
             statElements[1].textContent = data.avgPoint;
-            const avgPositionElement = statElements[2];
-            avgPositionElement.textContent = data.upAvgPosition.toFixed(2);
-            avgPositionElement.insertAdjacentHTML('afterend', 
-                `<div class="text-xs text-gray-500">（≤${data.rankRule.avg}）可升段</div>`
-            );
-            const sumPositionElement = statElements[3];
-            sumPositionElement.textContent = data.sumPosition;
-            sumPositionElement.insertAdjacentHTML('afterend', 
-                `<div class="text-xs text-gray-500">（≤${data.rankRule.value}）可升段</div>`
-            );
 
-            // 更新升段条件
-            const conditionDiv = document.querySelector('.bg-\\[\\#1e40af\\]');
-            const conditionElements = conditionDiv.querySelectorAll('p');
-
-            // 获取最近的对局顺位数据
-            const recentGames = rateListData
-                .sort((a, b) => new Date(a.createTime) - new Date(b.createTime))
-                .map(game => parseInt(game.sort));
-
-            const requiredGames = data.rankRule.round; // 需要的总局数
-            const maxAllowedSum = data.rankRule.value; // 允许的最大顺位和
-            const avgPosition = parseFloat(data.rankRule.avg); // 平均顺位要求
-
-            let neededGames = 0, targetSum;
-
-            const latestGames = recentGames.slice(-requiredGames);
-            let currentSum = latestGames.reduce((sum, pos) => sum + pos, 0);
-            // 如果局数不足
-            if (recentGames.length < requiredGames) {
-                // 计算需要填充的局数
-                const remainingGames = requiredGames - recentGames.length;
-                // 填充所有剩余局数为1位
-                currentSum = currentSum + remainingGames;
+            if (data.rankRule.rank in ["九段", "十段"]) {
+                statElements[2].textContent = "已通关";
+                statElements[3].textContent = "已通关";
+                const fastestConditionText = `🔹 当前最快的升段条件是：恭喜你成功通关！`;
+                const relaxedConditionText = `🔹 当前最宽松升段条件是：恭喜你成功通关！`;
                 
-                neededGames = remainingGames;
+                conditionElements[0].textContent = fastestConditionText;
+                conditionElements[1].textContent = relaxedConditionText;
+                return;
             }
-            // 获取最近requiredGames局的顺位数据
+            else {
+                const avgPositionElement = statElements[2];
+                avgPositionElement.textContent = data.upAvgPosition.toFixed(2);
+                avgPositionElement.insertAdjacentHTML('afterend', 
+                    `<div class="text-xs text-gray-500">（≤${data.rankRule.avg}）可升段</div>`
+                );
+                const sumPositionElement = statElements[3];
+                sumPositionElement.textContent = data.sumPosition;
+                sumPositionElement.insertAdjacentHTML('afterend', 
+                    `<div class="text-xs text-gray-500">（≤${data.rankRule.value}）可升段</div>`
+                );
 
-            // 检查是否已经满足升段条件
-            if (currentSum <= maxAllowedSum) {
-                targetSum = maxAllowedSum - currentSum;
-            } else {
-                // 从最老的一局开始尝试替换为1位
-                let replacedCount = 0;
-                let tempSum = currentSum;
-                
-                for (let i = 0; i < latestGames.length; i++) {
-                    // 计算替换这一局为1位后的顺位和
-                    tempSum = tempSum - latestGames[i] + 1;
-                    replacedCount++;
+                // 更新升段条件
+                const conditionDiv = document.querySelector('.bg-\\[\\#1e40af\\]');
+                const conditionElements = conditionDiv.querySelectorAll('p');
+
+                // 获取最近的对局顺位数据
+                const recentGames = rateListData
+                    .sort((a, b) => new Date(a.createTime) - new Date(b.createTime))
+                    .map(game => parseInt(game.sort));
+
+                const requiredGames = data.rankRule.round; // 需要的总局数
+                const maxAllowedSum = data.rankRule.value; // 允许的最大顺位和
+                const avgPosition = parseFloat(data.rankRule.avg); // 平均顺位要求
+
+                let neededGames = 0, targetSum;
+
+                const latestGames = recentGames.slice(-requiredGames);
+                let currentSum = latestGames.reduce((sum, pos) => sum + pos, 0);
+                // 如果局数不足
+                if (recentGames.length < requiredGames) {
+                    // 计算需要填充的局数
+                    const remainingGames = requiredGames - recentGames.length;
+                    // 填充所有剩余局数为1位
+                    currentSum = currentSum + remainingGames;
                     
-                    if (tempSum <= maxAllowedSum) {
-                        // 找到满足条件的情况
-                        neededGames += replacedCount;
-                        targetSum = neededGames + (maxAllowedSum - tempSum);
-                        break;
-                    }
+                    neededGames = remainingGames;
                 }
-            }
+                // 获取最近requiredGames局的顺位数据
 
-            // 计算最宽松升段条件
-            let relaxedNeededGames = 0, relaxedTargetSum;
-            
-            // 获取最近requiredGames局的顺位数据
-            currentSum = latestGames.reduce((sum, pos) => sum + pos, 0);
-            let oldCurrentSum = currentSum;
-            if (recentGames.length < requiredGames) {
-                // 如果还未满足局数要求
-                const remainingGames = requiredGames - recentGames.length;
-                // 填充所有剩余局数为avgPosition
-                currentSum = currentSum + (remainingGames * avgPosition);
-                relaxedNeededGames = remainingGames;
-            }
-
-            // 检查是否已经满足升段条件
-            if (currentSum <= maxAllowedSum) {
-                relaxedTargetSum = maxAllowedSum - oldCurrentSum;
-            } else {
-                let replacedCount = 0;
-                let tempSum = currentSum;
-                let bestAvgPosition = 1;
-                let bestNeededGames = 0;
-                for (let i = 0; i < latestGames.length; i++) {
-                    tempSum = tempSum - latestGames[i];
-                    replacedCount++;
-                    if (tempSum <= maxAllowedSum && (maxAllowedSum - tempSum) / replacedCount > bestAvgPosition) {
-                        bestAvgPosition = (maxAllowedSum - tempSum) / replacedCount;
-                        bestNeededGames = replacedCount;
-                    }
-                }
-                
-                relaxedTargetSum = Math.ceil(relaxedNeededGames * bestAvgPosition + bestNeededGames * bestAvgPosition);
-                relaxedNeededGames += bestNeededGames;
-            /*
-                // 从最老的一局开始尝试替换为avgPosition
-                let replacedCount = 0;
-                let tempSum = currentSum;
-                
-                for (let i = 0; i < latestGames.length; i++) {
-                    // 计算替换这一局为avgPosition后的顺位和
-                    tempSum = tempSum - latestGames[i] + avgPosition;
-                    replacedCount++;
+                // 检查是否已经满足升段条件
+                if (currentSum <= maxAllowedSum) {
+                    targetSum = maxAllowedSum - currentSum;
+                } else {
+                    // 从最老的一局开始尝试替换为1位
+                    let replacedCount = 0;
+                    let tempSum = currentSum;
                     
-                    if (tempSum <= maxAllowedSum) {
-                        // 找到满足条件的情况
-                        relaxedNeededGames += replacedCount;
-                        // 计算目标顺位和：替换的局数*平均顺位 + 剩余可用的顺位和
-                        relaxedTargetSum = Math.ceil(relaxedNeededGames * avgPosition + (maxAllowedSum - tempSum));
-                        break;
+                    for (let i = 0; i < latestGames.length; i++) {
+                        // 计算替换这一局为1位后的顺位和
+                        tempSum = tempSum - latestGames[i] + 1;
+                        replacedCount++;
+                        
+                        if (tempSum <= maxAllowedSum) {
+                            // 找到满足条件的情况
+                            neededGames += replacedCount;
+                            targetSum = neededGames + (maxAllowedSum - tempSum);
+                            break;
+                        }
                     }
                 }
-            */
-            }
 
-            const fastestConditionText = `🔹 当前最快的升段条件是：${neededGames}半庄顺位之和 ≤ ${targetSum}`;
-            const relaxedConditionText = `🔹 当前最宽松升段条件是：${relaxedNeededGames}半庄顺位之和 ≤ ${relaxedTargetSum}`;
-            
-            conditionElements[0].textContent = fastestConditionText;
-            conditionElements[1].textContent = relaxedConditionText;
+                // 计算最宽松升段条件
+                let relaxedNeededGames = 0, relaxedTargetSum;
+                
+                // 获取最近requiredGames局的顺位数据
+                currentSum = latestGames.reduce((sum, pos) => sum + pos, 0);
+                let oldCurrentSum = currentSum;
+                if (recentGames.length < requiredGames) {
+                    // 如果还未满足局数要求
+                    const remainingGames = requiredGames - recentGames.length;
+                    // 填充所有剩余局数为avgPosition
+                    currentSum = currentSum + (remainingGames * avgPosition);
+                    relaxedNeededGames = remainingGames;
+                }
+
+                // 检查是否已经满足升段条件
+                if (currentSum <= maxAllowedSum) {
+                    relaxedTargetSum = maxAllowedSum - oldCurrentSum;
+                } else {
+                    let replacedCount = 0;
+                    let tempSum = currentSum;
+                    let bestAvgPosition = 1;
+                    let bestNeededGames = 0;
+                    for (let i = 0; i < latestGames.length; i++) {
+                        tempSum = tempSum - latestGames[i];
+                        replacedCount++;
+                        if (tempSum <= maxAllowedSum && (maxAllowedSum - tempSum) / replacedCount > bestAvgPosition) {
+                            bestAvgPosition = (maxAllowedSum - tempSum) / replacedCount;
+                            bestNeededGames = replacedCount;
+                        }
+                    }
+                    
+                    relaxedTargetSum = Math.ceil(relaxedNeededGames * bestAvgPosition + bestNeededGames * bestAvgPosition);
+                    relaxedNeededGames += bestNeededGames;
+                /*
+                    // 从最老的一局开始尝试替换为avgPosition
+                    let replacedCount = 0;
+                    let tempSum = currentSum;
+                    
+                    for (let i = 0; i < latestGames.length; i++) {
+                        // 计算替换这一局为avgPosition后的顺位和
+                        tempSum = tempSum - latestGames[i] + avgPosition;
+                        replacedCount++;
+                        
+                        if (tempSum <= maxAllowedSum) {
+                            // 找到满足条件的情况
+                            relaxedNeededGames += replacedCount;
+                            // 计算目标顺位和：替换的局数*平均顺位 + 剩余可用的顺位和
+                            relaxedTargetSum = Math.ceil(relaxedNeededGames * avgPosition + (maxAllowedSum - tempSum));
+                            break;
+                        }
+                    }
+                */
+                }
+
+                const fastestConditionText = `🔹 当前最快的升段条件是：${neededGames}半庄顺位之和 ≤ ${targetSum}`;
+                const relaxedConditionText = `🔹 当前最宽松升段条件是：${relaxedNeededGames}半庄顺位之和 ≤ ${relaxedTargetSum}`;
+                
+                conditionElements[0].textContent = fastestConditionText;
+                conditionElements[1].textContent = relaxedConditionText;
+            }
         }
 
         // 初始化6维图
