@@ -151,7 +151,7 @@
         };
 
         // 数据获取函数
-        async function fetchData(playerName = 'Aisakaw') {
+        async function fetchData(playerName = '{{ username }}') {
             try {
                 // 获取基本信息
                 const basicResponse = await fetch(`${API_ENDPOINTS.basic}?name=${encodeURIComponent(playerName)}`);

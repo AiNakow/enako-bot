@@ -154,3 +154,4 @@ VENV_NONEBOT/
 nonebot/src/plugins/nonebot-plugin-naga_assist/data/
 auto-naga/.gitignore/
 auto-naga/.git/
+test/

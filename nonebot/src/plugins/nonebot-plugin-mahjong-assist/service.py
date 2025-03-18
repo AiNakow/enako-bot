@@ -31,8 +31,8 @@ class MahjongService:
     
     @staticmethod
     def gsz_userinfo_get(username) -> BytesIO:
-        t = jinja_env.get_template("https://gsz.rmlinking.com/#/pages/score/score?name=" + username)
-        content = t.render()
+        template = jinja_env.get_template('gsz_info.html')
+        content = template.render(username=username)
         
         pic = asyncio.run(convert_html_to_pic(content=content))
         
