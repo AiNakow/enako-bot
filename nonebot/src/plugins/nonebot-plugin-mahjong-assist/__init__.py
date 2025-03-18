@@ -105,7 +105,24 @@ async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()]):
     
     arg_list = arg_text.split(' ')
     username = arg_list[0]
-    pic = MahjongService.gsz_userinfo_get(username)
+    try:
+        await get_gsz_userinfo.send(f"正在获取{username}的吃鱼信息，请稍等...", at_sender=True)
+    except MatcherException:
+        raise
+    except Exception as e:
+        pass
+
+    try:
+        pic = MahjongService.gsz_userinfo_get(username)
+    except Exception as e:
+        try:
+            await get_gsz_userinfo.finish(f"获取{username}的吃鱼信息失败，请检查是否输入有误", at_sender=True)
+        except MatcherException:
+            raise
+        except Exception as e:
+            pass
+        return
+
     message = MessageSegment.image(file=pic)
     
     try:

@@ -64,7 +64,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div class="card bg-base-100 shadow-xl p-4">
                 <div class="flex items-center gap-4">
-                    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAABmJLR0QA/wD/AP+gvaeTAAABKklEQVR4nO3csUrDYBiG0e9vaxFEcHBwFQen4uDg4OLfoaOjk6ODg4NODg4O4qBQKKWttLbRKILgIOggdmvzJM1zICSQl3y8UEhyBQAAAAAAAAAAAAAAAACwpGbpAcYwm81Wuq67rapL/6RjGYbhIaV0MJ1O38Z87oem02l/PB6/p5T2/cnGk3PeTyn1KaVurOfWxnzYgiaTyUZK6Syl9FlVG0vPM7aq+pxzPt5sNt9TSs/dbvdl6ZnGkHPej6LopKo2q2q79Dwj2ymK4qgoiuOc88HCw4wm53xYVVtVtbf0LH/YK8vyZOkhxlZV2znnnRjv/3+1XZblzqITjSzG+/9XRkoppfhZRKy/EUVRxFoQWXEWhMKCUFgQCgtCYUEoLAiFBaGwIBQWhMKCUFgQCgsCAAAAAAAAAACw0DfCYEu4yC5O/QAAAABJRU5ErkJggg==" alt="Avatar" class="w-24 h-24 rounded-lg">
+                    <img src="data:image/png;base64,{{ userpic }}" alt="Avatar" class="w-24 h-24 rounded-lg">
                     <div>
                         <h2 class="text-2xl font-bold text-[#1e40af]"></h2>
                         <div class="mt-2">
@@ -151,7 +151,8 @@
         };
 
         // 数据获取函数
-        async function fetchData(playerName = '{{ username }}') {
+        function fetchData(playerName = '{{ username }}') {
+            /*
             try {
                 // 获取基本信息
                 const basicResponse = await fetch(`${API_ENDPOINTS.basic}?name=${encodeURIComponent(playerName)}`);
@@ -181,22 +182,28 @@
                     throw new Error(rateListResult.message || '对局数据获取失败');
                 }
 
-                return {
-                    basicData,
-                    techData,
-                    rateListData: rateListResult.data
-                };
             } catch (error) {
                 console.error('API请求失败:', error);
                 throw error;
             }
+            */
+
+            const basicData = JSON.parse('{{ basic_data }}')
+            const techData = JSON.parse('{{ tech_data }}')
+            const rateListData = JSON.parse('{{ rateList_data }}')
+
+            return {
+                    basicData,
+                    techData,
+                    rateListData
+                };
         }
 
         // 更新玩家信息
         function updatePlayerInfo(data, rateListData) {
             // 更新头像
-            const avatarUrl = `https://q.qlogo.cn/headimg_dl?dst_uin=${data.qq}&spec=640&img_type=jpg`;
-            document.querySelector('.flex.items-center.gap-4 img').src = avatarUrl;
+            //const avatarUrl = `https://q.qlogo.cn/headimg_dl?dst_uin=${data.qq}&spec=640&img_type=jpg`;
+            // document.querySelector('.flex.items-center.gap-4 img').src = avatarUrl;
 
             // 使用更精确的选择器
             document.querySelector('.card .flex.items-center.gap-4 h2').textContent = data.name;
@@ -479,7 +486,7 @@
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', async function() {
             try {
-                const data = await fetchData();
+                const data = fetchData();
                 updatePlayerInfo(data.basicData, data.rateListData);
                 initRadarChart(data.techData);
                 initDoughnutChart(data.techData);
