@@ -221,6 +221,11 @@
             statElements[0].textContent = data.maxPoint;
             statElements[1].textContent = data.avgPoint;
 
+            
+            // 更新升段条件
+            const conditionDiv = document.querySelector('.bg-\\[\\#1e40af\\]');
+            const conditionElements = conditionDiv.querySelectorAll('p');
+
             if (data.rankRule.round === null){
                 statElements[2].textContent = "已通关";
                 statElements[3].textContent = "已通关";
@@ -229,7 +234,6 @@
                 
                 conditionElements[0].textContent = fastestConditionText;
                 conditionElements[1].textContent = relaxedConditionText;
-                return;
             }
             else {
                 const avgPositionElement = statElements[2];
@@ -242,10 +246,6 @@
                 sumPositionElement.insertAdjacentHTML('afterend', 
                     `<div class="text-xs text-gray-500">（≤${data.rankRule.value}）可升段</div>`
                 );
-
-                // 更新升段条件
-                const conditionDiv = document.querySelector('.bg-\\[\\#1e40af\\]');
-                const conditionElements = conditionDiv.querySelectorAll('p');
 
                 // 获取最近的对局顺位数据
                 const recentGames = rateListData
