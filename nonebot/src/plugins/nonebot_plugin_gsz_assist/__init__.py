@@ -22,6 +22,12 @@ __usage_help__ = """
 /吃鱼
 /吃鱼 @群友
 /吃鱼 <用户名>
+/仇恨榜
+/仇恨榜 @群友
+/仇恨榜 <用户名>
+/好人榜
+/好人榜 @群友
+/好人榜 <用户名>
 """
 
 __plugin_meta__ = PluginMetadata(
@@ -47,6 +53,8 @@ def get_at_list(message: Message) -> list[str]:
 gsz_help = on_command("公式战小助手", priority=10, block=True)
 bind_gsz_userinfo = on_command("公式战绑定", priority=10, block=True)
 get_gsz_userinfo = on_command("吃鱼", priority=10, block=True)
+get_gsz_rank_top = on_command("仇恨榜", priority=10, block=True)
+get_gsz_rank_last = on_command("好人榜", priority=10, block=True)
 
 @gsz_help.handle()
 async def gsz_help_handler(event: Event):
@@ -73,6 +81,116 @@ async def bind_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], even
 
 @get_gsz_userinfo.handle()
 async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event: Event):
+    if event.message_type == "group" and get_at_list(event.message) != []:
+        at_list = get_at_list(event.message)
+        username = GszService.get_userinfo_by_uid(uid=at_list[0])
+        if username is None:
+            try:
+                await get_gsz_userinfo.finish(f"该用户未绑定公式战信息！", at_sender=True)
+            except MatcherException:
+                raise
+            except Exception as e:
+                pass
+            return
+    else:
+        arg_text = args.extract_plain_text()
+        arg_list = arg_text.split(' ')
+        if arg_text == "":
+            username = GszService.get_userinfo_by_uid(uid=event.get_user_id())
+            if username is None:
+                try:
+                    await get_gsz_userinfo.finish(f"未绑定公式战信息，请使用\n/公式战绑定 <用户名>\n绑定公式战信息", at_sender=True)
+                except MatcherException:
+                    raise
+                except Exception as e:
+                    pass
+                return
+        else:
+            username = arg_list[0]
+    try:
+        await get_gsz_userinfo.send(f"正在获取{username}的吃鱼信息，请稍等...", at_sender=True)
+    except MatcherException:
+        raise
+    except Exception as e:
+        pass
+
+    try:
+        pic = GszService.get_userinfo_by_name(username)
+    except Exception as e:
+        try:
+            await get_gsz_userinfo.finish(f"获取{username}的吃鱼信息失败，请检查是否输入有误", at_sender=True)
+        except MatcherException:
+            raise
+        except Exception as e:
+            pass
+        return
+
+    message = MessageSegment.image(file=pic)
+    
+    try:
+        await get_gsz_userinfo.finish(message=message, at_sender=True)
+    except MatcherException:
+        raise
+    except Exception as e:
+        pass
+
+@get_gsz_rank_top.handle()
+async def get_gsz_rank_top_handler(args: Annotated[Message, CommandArg()], event: Event):
+    if event.message_type == "group" and get_at_list(event.message) != []:
+        at_list = get_at_list(event.message)
+        username = GszService.get_userinfo_by_uid(uid=at_list[0])
+        if username is None:
+            try:
+                await get_gsz_userinfo.finish(f"该用户未绑定公式战信息！", at_sender=True)
+            except MatcherException:
+                raise
+            except Exception as e:
+                pass
+            return
+    else:
+        arg_text = args.extract_plain_text()
+        arg_list = arg_text.split(' ')
+        if arg_text == "":
+            username = GszService.get_userinfo_by_uid(uid=event.get_user_id())
+            if username is None:
+                try:
+                    await get_gsz_userinfo.finish(f"未绑定公式战信息，请使用\n/公式战绑定 <用户名>\n绑定公式战信息", at_sender=True)
+                except MatcherException:
+                    raise
+                except Exception as e:
+                    pass
+                return
+        else:
+            username = arg_list[0]
+    try:
+        await get_gsz_userinfo.send(f"正在获取{username}的吃鱼信息，请稍等...", at_sender=True)
+    except MatcherException:
+        raise
+    except Exception as e:
+        pass
+
+    try:
+        pic = GszService.get_userinfo_by_name(username)
+    except Exception as e:
+        try:
+            await get_gsz_userinfo.finish(f"获取{username}的吃鱼信息失败，请检查是否输入有误", at_sender=True)
+        except MatcherException:
+            raise
+        except Exception as e:
+            pass
+        return
+
+    message = MessageSegment.image(file=pic)
+    
+    try:
+        await get_gsz_userinfo.finish(message=message, at_sender=True)
+    except MatcherException:
+        raise
+    except Exception as e:
+        pass
+
+@get_gsz_rank_last.handle()
+async def get_gsz_rank_last_handler(args: Annotated[Message, CommandArg()], event: Event):
     if event.message_type == "group" and get_at_list(event.message) != []:
         at_list = get_at_list(event.message)
         username = GszService.get_userinfo_by_uid(uid=at_list[0])

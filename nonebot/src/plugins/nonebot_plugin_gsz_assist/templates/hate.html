@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康麻将联合 - 仇恨值数据</title>
+    <script src="{{ tailwind_js }}"></script>
+    <link href="{{ daisyui_css }}" rel="stylesheet" type="text/css" />
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 0.75rem;
+            transition: transform 0.2s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+        }
+        .table td, .table th {
+            padding: 0.75rem 1rem;
+        }
+        .table tr:hover {
+            background-color: #f1f5f9;
+        }
+        .badge {
+            padding: 0.25em 0.75em;
+            border-radius: 9999px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-4">
+        <div class="card bg-base-100 shadow-xl p-4">
+            <h2 class="text-2xl font-bold text-[#1e40af] mb-4">{{ username }}{% if flag == 0 %}的仇恨榜{% else %}的好人榜{% endif %}</h2>
+            <div class="overflow-x-auto">
+                <table class="table w-full">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">玩家名称</th>
+                            <th rowspan="2">总局数</th>
+                            <th rowspan="2">{% if flag == 0 %}仇恨值{% else %}好感值{% endif %}</th>
+                            <th rowspan="2">胜场</th>
+                            <th rowspan="2">胜率</th>
+                            <th colspan="5" class="text-center">相遇时对手成绩</th>
+                            <th colspan="5" class="text-center">相遇时我的成绩</th>
+                        </tr>
+                        <tr>
+                            <th>1位</th>
+                            <th>2位</th>
+                            <th>3位</th>
+                            <th>4位</th>
+                            <th>均顺</th>
+                            <th>1位</th>
+                            <th>2位</th>
+                            <th>3位</th>
+                            <th>4位</th>
+                            <th>均顺</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in hate_data %}
+                        <tr>
+                            <td class="font-medium">{{ record.name }}</td>
+                            <td>{{ record.total }}</td>
+                            <td>
+                                <span class="badge {% if flag == 0 %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                                    {{ record.hatred }}
+                                </span>
+                            </td>
+                            <td>{{ record.wincount }}</td>
+                            <td>{{ "%.1f"|format(record.winRate * 100) }}%</td>
+                            <td class="font-mono text-lg">{{ record.opSort1 }}</td>
+                            <td class="font-mono text-lg">{{ record.opSort2 }}</td>
+                            <td class="font-mono text-lg">{{ record.opSort3 }}</td>
+                            <td class="font-mono text-lg">{{ record.opSort4 }}</td>
+                            <td class="font-mono text-lg">{{ "%.2f"|format(record.opAvg) }}</td>
+                            <td class="font-mono text-lg">{{ record.mySort1 }}</td>
+                            <td class="font-mono text-lg">{{ record.mySort2 }}</td>
+                            <td class="font-mono text-lg">{{ record.mySort3 }}</td>
+                            <td class="font-mono text-lg">{{ record.mySort4 }}</td>
+                            <td class="font-mono text-lg">{{ "%.2f"|format(record.myAvg) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
