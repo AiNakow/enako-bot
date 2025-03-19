@@ -367,7 +367,7 @@
                 normalizeValue(techData.defense, 0.9),        // 防守
                 normalizeValue(techData.stabilize, 0.6),      // 稳定
                 normalizeValue(techData.lucky, 3),       // 运势
-                normalizeValue(techData.tech - 1500, 400),     // 技术
+                normalizeValue(techData.tech - 1000, 1000),     // 技术
                 normalizeValue(techData.attack, 0.3)          // 进攻
             ];
 
@@ -471,9 +471,9 @@
         }
 
         // 更新顺位数据
-        function updateRankHistory(rateListData) {
+        function updateRankHistory(rateListData, basicData) {
             const rankGroupsElement = document.getElementById('rankGroups');
-            
+            const rankRound = basicData.rankRule.round;
             // 处理最近顺位数据
             const recentRanks = rateListData
                 .sort((a, b) => new Date(a.createTime) - new Date(b.createTime)) // 按时间升序排序
@@ -484,18 +484,40 @@
             const ranks = recentRanks.match(/.{1,5}/g) || [];
             let html = '';
             
+            let startGame = 0;
+            let endGame = 0;
             ranks.forEach((group, index) => {
-                const startGame = index * 5 + 1;
-                const endGame = startGame + group.length - 1;
+                startGame = index * 5 + 1;
+                endGame = startGame + 4;
+                if (endGame > rankRound) {
+                    endGame = rankRound
+                }
+
                 html += `
                     <div class="text-center">
                         <div class="text-sm text-gray-500">${startGame}-${endGame}</div>
-                        <div class="rank-divider" style="width: ${group.length}ch;"></div>
+                        <div class="rank-divider" style="width: ${endGame - startGame + 1}ch;"></div>
                         <div class="text-lg font-mono">${group}</div>
                     </div>
                 `;
             });
-            
+
+            while (endGame < rankRound) {
+                startGame = endGame + 1;
+                endGame = startGame + 4;
+                if (endGame > rankRound) {
+                    endGame = rankRound
+                }
+
+                html += `
+                    <div class="text-center">
+                        <div class="text-sm text-gray-500">${startGame}-${endGame}</div>
+                        <div class="rank-divider" style="width: ${endGame - startGame + 1}ch;"></div>
+                        <div class="text-lg font-mono"></div>
+                    </div>
+                `;
+            }
+
             rankGroupsElement.innerHTML = html;
         }
 
@@ -506,7 +528,7 @@
                 updatePlayerInfo(data.basicData, data.rateListData);
                 initRadarChart(data.techData);
                 initDoughnutChart(data.techData);
-                updateRankHistory(data.rateListData);
+                updateRankHistory(data.rateListData, data.basicData);
             } catch (error) {
                 console.error('初始化失败:', error);
                // alert('数据加载失败，请刷新页面重试');

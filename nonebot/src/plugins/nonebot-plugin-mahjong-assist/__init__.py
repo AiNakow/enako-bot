@@ -19,7 +19,6 @@ __usage_help__ = """
 /面麻计分器
 /天凤牌理 <标准形/一般形> <天凤格式手牌>
 /天凤牌理 <天凤格式手牌>
-/吃鱼 <公式站昵称>
 """
 
 __plugin_meta__ = PluginMetadata(
@@ -37,7 +36,6 @@ config = get_plugin_config(Config)
 get_help = on_command("日麻小助手", priority=10, block=True)
 get_mahjong_helper = on_command("面麻计分器", priority=10, block=True)
 get_tenhou_paili = on_command("天凤牌理", priority=10, block=True)
-get_gsz_userinfo = on_command("吃鱼", priority=10, block=True)
 
 @get_help.handle()
 async def get_help_handler():
@@ -92,42 +90,3 @@ async def get_tenhou_paili_handler(args: Annotated[Message, CommandArg()]):
     except Exception as e:
         pass 
 
-@get_gsz_userinfo.handle()
-async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()]):
-    arg_text = args.extract_plain_text()
-    if arg_text == "":
-        try:
-            await get_gsz_userinfo.finish(__usage_help__, at_sender=True)
-        except MatcherException:
-            raise
-        except Exception as e:
-            pass
-    
-    arg_list = arg_text.split(' ')
-    username = arg_list[0]
-    try:
-        await get_gsz_userinfo.send(f"正在获取{username}的吃鱼信息，请稍等...", at_sender=True)
-    except MatcherException:
-        raise
-    except Exception as e:
-        pass
-
-    try:
-        pic = MahjongService.gsz_userinfo_get(username)
-    except Exception as e:
-        try:
-            await get_gsz_userinfo.finish(f"获取{username}的吃鱼信息失败，请检查是否输入有误", at_sender=True)
-        except MatcherException:
-            raise
-        except Exception as e:
-            pass
-        return
-
-    message = MessageSegment.image(file=pic)
-    
-    try:
-        await get_gsz_userinfo.finish(message=message, at_sender=True)
-    except MatcherException:
-        raise
-    except Exception as e:
-        pass
