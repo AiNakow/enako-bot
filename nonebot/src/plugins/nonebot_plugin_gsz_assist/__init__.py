@@ -34,6 +34,8 @@ __plugin_meta__ = PluginMetadata(
 plugin_register.register(__usage_help__)
 config = get_plugin_config(Config)
 
+if not os.path.exists(data_dir):
+    os.mkdir(data_dir)
 if not os.path.exists(database_dir):
     os.mkdir(database_dir)
 
