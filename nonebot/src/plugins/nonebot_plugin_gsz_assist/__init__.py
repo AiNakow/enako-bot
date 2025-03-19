@@ -67,10 +67,15 @@ async def bind_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], even
 async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event: Event):
     arg_text = args.extract_plain_text()
     arg_list = arg_text.split(' ')
-    if len(arg_list) == 0:
+    if arg_text == "":
         username = GszService.get_userinfo_by_uid(uid=event.get_user_id())
         if username is None:
-            await get_gsz_userinfo.finish(f"未绑定公式战信息，请使用\n/公式战绑定 <用户名>\n绑定公式战信息", at_sender=True)
+            try:
+                await get_gsz_userinfo.finish(f"未绑定公式战信息，请使用\n/公式战绑定 <用户名>\n绑定公式战信息", at_sender=True)
+            except MatcherException:
+                raise
+            except Exception as e:
+                pass
             return
     else:
         username = arg_list[0]
