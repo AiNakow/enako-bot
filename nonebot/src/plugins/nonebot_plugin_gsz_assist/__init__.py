@@ -37,6 +37,11 @@ config = get_plugin_config(Config)
 if not os.path.exists(database_dir):
     os.mkdir(database_dir)
 
+def get_at_list(message: Message) -> list[str]:
+    """获取消息中所有@的QQ号列表"""
+    return [segment.data["qq"] for segment in message if segment.type == "at"]
+
+
 gsz_help = on_command("公式战小助手", priority=10, block=True)
 bind_gsz_userinfo = on_command("公式战绑定", priority=10, block=True)
 get_gsz_userinfo = on_command("吃鱼", priority=10, block=True)
@@ -66,8 +71,8 @@ async def bind_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], even
 
 @get_gsz_userinfo.handle()
 async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event: Event):
-    if event.message_type == "group" and event.message.extract_at() != []:
-        at_list = event.message.extract_at()
+    if event.message_type == "group" and get_at_list(event.message) != []:
+        at_list = get_at_list(event.message)
         username = GszService.get_userinfo_by_uid(uid=at_list[0])
         if username is None:
             try:
