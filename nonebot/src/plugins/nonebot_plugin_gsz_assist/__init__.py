@@ -20,6 +20,7 @@ __usage_help__ = """
 用于查询用户的公式战信息
 /公式战绑定 <用户名>
 /吃鱼
+/吃鱼 @群友
 /吃鱼 <用户名>
 """
 
@@ -65,20 +66,32 @@ async def bind_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], even
 
 @get_gsz_userinfo.handle()
 async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event: Event):
-    arg_text = args.extract_plain_text()
-    arg_list = arg_text.split(' ')
-    if arg_text == "":
-        username = GszService.get_userinfo_by_uid(uid=event.get_user_id())
+    if event.message_type == "group" and event.message.extract_at() != []:
+        at_list = event.message.extract_at()
+        username = GszService.get_userinfo_by_uid(uid=at_list[0])
         if username is None:
             try:
-                await get_gsz_userinfo.finish(f"未绑定公式战信息，请使用\n/公式战绑定 <用户名>\n绑定公式战信息", at_sender=True)
+                await get_gsz_userinfo.finish(f"该用户未绑定公式战信息！", at_sender=True)
             except MatcherException:
                 raise
             except Exception as e:
                 pass
             return
     else:
-        username = arg_list[0]
+        arg_text = args.extract_plain_text()
+        arg_list = arg_text.split(' ')
+        if arg_text == "":
+            username = GszService.get_userinfo_by_uid(uid=event.get_user_id())
+            if username is None:
+                try:
+                    await get_gsz_userinfo.finish(f"未绑定公式战信息，请使用\n/公式战绑定 <用户名>\n绑定公式战信息", at_sender=True)
+                except MatcherException:
+                    raise
+                except Exception as e:
+                    pass
+                return
+        else:
+            username = arg_list[0]
     try:
         await get_gsz_userinfo.send(f"正在获取{username}的吃鱼信息，请稍等...", at_sender=True)
     except MatcherException:
