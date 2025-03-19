@@ -49,11 +49,8 @@ class Userdata_manager():
                 return False
             db_cursor = db_connection.cursor()
             for userdata in userdata_list:
-                db_cursor.execute("INSERT INTO userdata(uid, np) \
-                                    VALUES ('{0}', {1})".format(
-                                    userdata["uid"],
-                                    userdata["np"]
-                                ))
+                db_cursor.execute("INSERT INTO userdata(uid, np) VALUES (?, ?)",
+                                (userdata["uid"], userdata["np"]))
             db_connection.commit()
             db_cursor.close()
             db_connection.close()
@@ -72,7 +69,8 @@ class Userdata_manager():
                 db_cursor.execute("SELECT * FROM userdata")
                 result = db_cursor.fetchall()
             else:
-                db_cursor.execute("SELECT * FROM userdata WHERE uid in ({0})".format(", ".join("'{0}'".format(uid) for uid in uid_list)))
+                placeholders = ','.join('?' * len(uid_list))
+                db_cursor.execute(f"SELECT * FROM userdata WHERE uid IN ({placeholders})", uid_list)
                 result = db_cursor.fetchall()
             for row in result:
                 userdata = {
@@ -91,7 +89,7 @@ class Userdata_manager():
             except:
                 return False
             db_cursor = db_connection.cursor()
-            db_cursor.execute("SELECT COUNT(*) FROM userdata WHERE uid = '{0}'".format(uid))
+            db_cursor.execute("SELECT COUNT(*) FROM userdata WHERE uid = ?", (uid,))
             result = db_cursor.fetchall()[0][0]
             if result > 0:
                 return True
@@ -108,12 +106,8 @@ class Userdata_manager():
             db_cursor = db_connection.cursor()
             for userdata in userdata_list:
                 if self.ifexist_userdata(userdata["uid"]):
-                    db_cursor.execute("UPDATE userdata \
-                                    SET np = {1}\
-                                    WHERE uid = '{0}'".format(
-                                        userdata["uid"],
-                                        userdata["np"]
-                                    ))
+                    db_cursor.execute("UPDATE userdata SET np = ? WHERE uid = ?",
+                                    (userdata["np"], userdata["uid"]))
                 else:
                     self.__insert_userdata([userdata])
             db_connection.commit()
@@ -129,7 +123,8 @@ class Userdata_manager():
             except:
                 return False
             db_cursor = db_connection.cursor()
-            db_cursor.execute("DELETE FROM userdata WHERE uid IN ({0})".format(", ".join("'{0}'".format(uid) for uid in uid_list)))
+            placeholders = ','.join('?' * len(uid_list))
+            db_cursor.execute(f"DELETE FROM userdata WHERE uid IN ({placeholders})", uid_list)
             db_connection.commit()
             db_cursor.close()
             db_connection.close()

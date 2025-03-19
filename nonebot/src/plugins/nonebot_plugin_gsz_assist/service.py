@@ -60,7 +60,16 @@ class GszService:
         raw_pic = httpx.get(f'https://q.qlogo.cn/headimg_dl?dst_uin={qq}&spec=640&img_type=jpg').content
 
         template = jinja_env.get_template('gsz_info.html')
-        content = template.render(username=username, userpic=base64.b64encode(raw_pic).decode("utf-8"), basic_data=json.dumps(basic_data["data"]), tech_data=json.dumps(tech_data["data"]), rateList_data=json.dumps(rateList_data["data"]))
+        content = template.render(
+            tailwind_js=os.path.join(template_dir, 'tailwind.js'),
+            daisyui_css=os.path.join(template_dir, 'daisyui.css'),
+            chart_js=os.path.join(template_dir, 'chart.js'),
+            username=username, 
+            userpic=base64.b64encode(raw_pic).decode("utf-8"), 
+            basic_data=json.dumps(basic_data["data"]), 
+            tech_data=json.dumps(tech_data["data"]), 
+            rateList_data=json.dumps(rateList_data["data"])
+            )
         pic = asyncio.run(convert_html_to_pic(content=content))
         
         return pic
