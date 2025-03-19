@@ -489,7 +489,7 @@
             ranks.forEach((group, index) => {
                 startGame = index * 5 + 1;
                 endGame = startGame + 4;
-                if (endGame > rankRound) {
+                if (rankRound != null && endGame > rankRound) {
                     endGame = rankRound
                 }
 
