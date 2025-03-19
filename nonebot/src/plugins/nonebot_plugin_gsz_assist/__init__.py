@@ -36,8 +36,18 @@ config = get_plugin_config(Config)
 if not os.path.exists(database_dir):
     os.mkdir(database_dir)
 
+gsz_help = on_command("公式战小助手", priority=10, block=True)
 bind_gsz_userinfo = on_command("公式战绑定", priority=10, block=True)
 get_gsz_userinfo = on_command("吃鱼", priority=10, block=True)
+
+@gsz_help.handle()
+async def gsz_help_handler(event: Event):
+    try:
+        await gsz_help.finish(__usage_help__, at_sender=True)
+    except MatcherException:
+        raise
+    except Exception as e:
+        pass
 
 @bind_gsz_userinfo.handle()
 async def bind_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event: Event):
