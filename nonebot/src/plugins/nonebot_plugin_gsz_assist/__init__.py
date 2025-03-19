@@ -141,7 +141,7 @@ async def get_gsz_rank_top_handler(args: Annotated[Message, CommandArg()], event
         username = GszService.get_userinfo_by_uid(uid=at_list[0])
         if username is None:
             try:
-                await get_gsz_userinfo.finish(f"该用户未绑定公式战信息！", at_sender=True)
+                await get_gsz_rank_top.finish(f"该用户未绑定公式战信息！", at_sender=True)
             except MatcherException:
                 raise
             except Exception as e:
@@ -154,7 +154,7 @@ async def get_gsz_rank_top_handler(args: Annotated[Message, CommandArg()], event
             username = GszService.get_userinfo_by_uid(uid=event.get_user_id())
             if username is None:
                 try:
-                    await get_gsz_userinfo.finish(f"未绑定公式战信息，请使用\n/公式战绑定 <用户名>\n绑定公式战信息", at_sender=True)
+                    await get_gsz_rank_top.finish(f"未绑定公式战信息，请使用\n/公式战绑定 <用户名>\n绑定公式战信息", at_sender=True)
                 except MatcherException:
                     raise
                 except Exception as e:
@@ -163,17 +163,17 @@ async def get_gsz_rank_top_handler(args: Annotated[Message, CommandArg()], event
         else:
             username = arg_list[0]
     try:
-        await get_gsz_userinfo.send(f"正在获取{username}的吃鱼信息，请稍等...", at_sender=True)
+        await get_gsz_rank_top.send(f"正在获取{username}的仇恨榜信息，请稍等...", at_sender=True)
     except MatcherException:
         raise
     except Exception as e:
         pass
 
     try:
-        pic = GszService.get_userinfo_by_name(username)
+        pic = GszService.get_rank_top(username)
     except Exception as e:
         try:
-            await get_gsz_userinfo.finish(f"获取{username}的吃鱼信息失败，请检查是否输入有误", at_sender=True)
+            await get_gsz_rank_top.finish(f"获取{username}的仇恨榜失败，请检查是否输入有误", at_sender=True)
         except MatcherException:
             raise
         except Exception as e:
@@ -183,7 +183,7 @@ async def get_gsz_rank_top_handler(args: Annotated[Message, CommandArg()], event
     message = MessageSegment.image(file=pic)
     
     try:
-        await get_gsz_userinfo.finish(message=message, at_sender=True)
+        await get_gsz_rank_top.finish(message=message, at_sender=True)
     except MatcherException:
         raise
     except Exception as e:
@@ -196,7 +196,7 @@ async def get_gsz_rank_last_handler(args: Annotated[Message, CommandArg()], even
         username = GszService.get_userinfo_by_uid(uid=at_list[0])
         if username is None:
             try:
-                await get_gsz_userinfo.finish(f"该用户未绑定公式战信息！", at_sender=True)
+                await get_gsz_rank_last.finish(f"该用户未绑定公式战信息！", at_sender=True)
             except MatcherException:
                 raise
             except Exception as e:
@@ -209,7 +209,7 @@ async def get_gsz_rank_last_handler(args: Annotated[Message, CommandArg()], even
             username = GszService.get_userinfo_by_uid(uid=event.get_user_id())
             if username is None:
                 try:
-                    await get_gsz_userinfo.finish(f"未绑定公式战信息，请使用\n/公式战绑定 <用户名>\n绑定公式战信息", at_sender=True)
+                    await get_gsz_rank_last.finish(f"未绑定公式战信息，请使用\n/公式战绑定 <用户名>\n绑定公式战信息", at_sender=True)
                 except MatcherException:
                     raise
                 except Exception as e:
@@ -218,17 +218,17 @@ async def get_gsz_rank_last_handler(args: Annotated[Message, CommandArg()], even
         else:
             username = arg_list[0]
     try:
-        await get_gsz_userinfo.send(f"正在获取{username}的吃鱼信息，请稍等...", at_sender=True)
+        await get_gsz_rank_last.send(f"正在获取{username}的好人榜信息，请稍等...", at_sender=True)
     except MatcherException:
         raise
     except Exception as e:
         pass
 
     try:
-        pic = GszService.get_userinfo_by_name(username)
+        pic = GszService.get_rank_last(username)
     except Exception as e:
         try:
-            await get_gsz_userinfo.finish(f"获取{username}的吃鱼信息失败，请检查是否输入有误", at_sender=True)
+            await get_gsz_rank_last.finish(f"获取{username}的好人榜失败，请检查是否输入有误", at_sender=True)
         except MatcherException:
             raise
         except Exception as e:
@@ -238,7 +238,7 @@ async def get_gsz_rank_last_handler(args: Annotated[Message, CommandArg()], even
     message = MessageSegment.image(file=pic)
     
     try:
-        await get_gsz_userinfo.finish(message=message, at_sender=True)
+        await get_gsz_rank_last.finish(message=message, at_sender=True)
     except MatcherException:
         raise
     except Exception as e:

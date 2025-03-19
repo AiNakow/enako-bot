@@ -120,9 +120,12 @@ class GszService:
             hate_data = httpx.get(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo={pageNo-1}&pageSize=10').json()
             if hate_data['code'] != 200:
                 raise Exception("获取hate_data_last_page-1失败")
-            hate_data_last += hate_data["data"]["records"]
+            hate_data_last = hate_data["data"]["records"] + hate_data_last
             if len(hate_data_last) > 10:
                 hate_data_last = hate_data_last[-10:]
+            for i in range(len(hate_data_last)):
+                hate_data_last[i]["hatred"] = -hate_data_last[i]["hatred"]
+            hate_data_last = sorted(hate_data_last, key=lambda x: x["hatred"], reverse=True)
 
         except Exception as e:
             print(e)
