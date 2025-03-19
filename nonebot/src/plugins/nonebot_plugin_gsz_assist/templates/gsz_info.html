@@ -12,6 +12,10 @@
             background-color: #f0f2f5;
             font-family: "Microsoft YaHei", sans-serif;
         }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
         .card {
             background: white;
             border-radius: 0.75rem;
@@ -33,7 +37,7 @@
             border-radius: 9999px;
             font-weight: 500;
         }
-        .text-2xl.font-bold.text-[#1e40af] {
+        .text-2xl.font-bold.text-blue-900 {
             font-family: "DIN Alternate", "Arial", sans-serif;
         }
         .text-4xl.font-bold {
@@ -64,19 +68,19 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div class="card bg-base-100 shadow-xl p-4">
                 <div class="flex items-center gap-4">
-                    <img src="data:image/png;base64,{{ userpic }}" alt="Avatar" class="w-24 h-24 rounded-lg">
+                    <img src="data:image/png;base64,{{ userpic }}" alt="Avatar" class="w-32 h-32 rounded-lg">
                     <div>
-                        <h2 class="text-2xl font-bold text-[#1e40af]"></h2>
-                        <div class="mt-2">
-                            <p class="flex items-center gap-2">
+                        <h2 class="text-3xl font-bold text-[#1e40af]"></h2>
+                        <div class="mt-4">
+                            <p class="flex items-center gap-2 text-lg">
                                 <span class="text-yellow-500">🏆</span>
                                 <span>全国排名：</span>
                             </p>
-                            <p class="flex items-center gap-2">
+                            <p class="flex items-center gap-2 text-lg">
                                 <span class="text-red-500">🏅</span>
                                 <span>雀庄排名：</span>
                             </p>
-                            <p class="flex items-center gap-2">
+                            <p class="flex items-center gap-2 text-lg">
                                 <span class="text-blue-500">🎮</span>
                                 <span>总局数：</span>
                             </p>

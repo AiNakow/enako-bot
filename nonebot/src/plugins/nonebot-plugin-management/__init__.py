@@ -13,7 +13,9 @@ from nonebot.exception import MatcherException
 from nonebot.adapters.onebot.v11 import MessageSegment
 from src.public.register import plugin_register
 
+import random
 from .config import Config
+from .common import *
 
 __plugin_meta__ = PluginMetadata(
     name="插件管理",
@@ -28,10 +30,12 @@ check_enable = on_fullmatch("enako", priority=1, block=True)
 echo_neko = on_message(priority=1, block=False)
 plugin_list = on_command("help", priority=10, block=True)
 
+
 @check_enable.handle()
 async def check_enable_handler():
+    response = random.choice(RAND_RESPONSE)
     try:
-        await check_enable.finish("喵呜")
+        await check_enable.finish(response)
     except MatcherException:
         raise
     except Exception as e:
