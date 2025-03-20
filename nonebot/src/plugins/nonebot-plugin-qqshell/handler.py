@@ -15,7 +15,6 @@ from nonebot.plugin import on_fullmatch
 from nonebot.plugin import on_message
 from nonebot.plugin import on_command
 from nonebot.internal.matcher import Matcher
-from src.public.register import plugin_register
 from .services import PanelService
 from .config import config
 from .config import SHELL_ADMIN
@@ -32,7 +31,6 @@ __usage_help__ = """
 > #closeall 关闭所有会话（仅管理员）
 """
 
-plugin_register.register(__usage_help__)
 
 time_stamp = time.time()
 

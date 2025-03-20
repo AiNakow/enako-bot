@@ -10,29 +10,12 @@ from nonebot.params import CommandArg
 from nonebot.params import Depends
 from nonebot.exception import MatcherException
 
-from src.public.register import plugin_register
 from typing import Annotated
 from .config import Config
 from .event_functions import *
 from .role_check import *
 from .userdata_manage import *
 from .auto_naga import *
-
-
-__plugin_meta__ = PluginMetadata(
-    name="naga-assist",
-    description="本插件用于将雀魂牌谱格式转换为天凤牌谱格式，以及使用naga对牌谱进行分析",
-    usage=(
-        "/np分配 「qq号」「np」 (仅限NAGA_ADMIN)",
-        "/np查询 「qq号」",
-        "/np查询",
-        "/牌谱格式转换 「雀魂牌谱链接」",
-        "/牌谱分析 天凤 「天凤牌谱链接」",
-        "/牌谱分析 自定义 「自定义牌谱编号」",
-    ),
-    type="application",
-    config=Config,
-)
 
 __usage_help__ = """
 /naga小助手
@@ -46,7 +29,14 @@ __usage_help__ = """
 /牌谱分析 自定义 「自定义牌谱编号」 「小局编号」(每小局消耗10np)
 """
 
-plugin_register.register(__usage_help__)
+__plugin_meta__ = PluginMetadata(
+    name="naga-assist",
+    description="本插件用于将雀魂牌谱格式转换为天凤牌谱格式，以及使用naga对牌谱进行分析",
+    usage=__usage_help__,
+    type="application",
+    config=Config,
+)
+
 
 if not os.path.exists(data_dir):
     os.mkdir(data_dir)

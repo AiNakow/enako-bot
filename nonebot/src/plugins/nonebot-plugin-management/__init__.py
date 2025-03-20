@@ -11,9 +11,9 @@ from nonebot.params import CommandArg
 from nonebot.params import Depends
 from nonebot.exception import MatcherException
 from nonebot.adapters.onebot.v11 import MessageSegment
-from src.public.register import plugin_register
-
 import random
+
+from .register import plugin_register
 from .config import Config
 from .common import *
 

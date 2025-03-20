@@ -11,7 +11,6 @@ from nonebot.adapters import Event, Message, Bot
 
 from typing import Annotated
 
-from src.public.register import plugin_register
 from .config import Config
 from .service import GszService
 from .common import *
@@ -37,7 +36,6 @@ __plugin_meta__ = PluginMetadata(
     config=Config,
 )
 
-plugin_register.register(__usage_help__)
 config = get_plugin_config(Config)
 
 if not os.path.exists(data_dir):
