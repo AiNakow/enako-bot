@@ -28,7 +28,23 @@ class GszService:
     userdata_manager = Userdata_manager()
 
     @staticmethod
+    def exist_gsz_user(username: str) -> bool:
+        try:
+            basic_data = httpx.get(API_ENDPOINTS["basic"] + f'?name={username}').json()
+            if basic_data['code'] != 200:
+                raise Exception("获取basic_data失败")
+        except Exception as e:
+            print(e)
+            return False
+        
+        if basic_data['data'] == "":
+            return False
+        return True
+    
+    @staticmethod
     def bind_userinfo(uid: str, username: str) -> bool:
+        if not GszService.exist_gsz_user(username):
+            return False
         userdata_manager = GszService.userdata_manager
         userdata_manager.update_userdata(userdata_list=[{"uid": uid, "username": username}])
         return True

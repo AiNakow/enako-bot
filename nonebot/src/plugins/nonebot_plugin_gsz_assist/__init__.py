@@ -77,7 +77,7 @@ async def bind_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], even
     if GszService.bind_userinfo(uid=event.get_user_id(), username=username):
         await bind_gsz_userinfo.finish(f"绑定成功，{username}的公式战信息已绑定到{event.get_user_id()}", at_sender=True)
     else:
-        await bind_gsz_userinfo.finish(f"绑定失败", at_sender=True)
+        await bind_gsz_userinfo.finish(f"绑定失败，用户名可能不存在，请检查是否输入有误（不要加示例中的尖括号）", at_sender=True)
 
 @get_gsz_userinfo.handle()
 async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event: Event):
