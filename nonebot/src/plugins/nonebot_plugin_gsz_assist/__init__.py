@@ -108,7 +108,7 @@ async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event
         else:
             username = arg_list[0]
     try:
-        await get_gsz_userinfo.send(f"正在获取{username}的吃鱼信息，请稍等...", at_sender=True)
+        await get_gsz_userinfo.send(f"正在获取{username}的公式战信息，请稍等...", at_sender=True)
     except MatcherException:
         raise
     except Exception as e:
@@ -118,7 +118,7 @@ async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event
         pic = GszService.get_userinfo_by_name(username)
     except Exception as e:
         try:
-            await get_gsz_userinfo.finish(f"获取{username}的吃鱼信息失败，请检查是否输入有误", at_sender=True)
+            await get_gsz_userinfo.finish(f"获取{username}的公式战信息失败，请检查是否输入有误", at_sender=True)
         except MatcherException:
             raise
         except Exception as e:
