@@ -14,6 +14,7 @@ from nonebot.adapters.onebot.v11 import MessageSegment
 from nonebot import get_loaded_plugins
 from nonebot import get_driver
 from nonebot.drivers import Driver
+from typing import Annotated
 
 import random
 from .register import plugin_register
@@ -81,7 +82,7 @@ async def list_plugin_handler():
     await list_plugin.finish(message, at_sender=True)
 
 @enable_plugin.handle()
-async def enable_plugin_handler(args: CommandArg):
+async def enable_plugin_handler(args: Annotated[Message, CommandArg()]):
     plugin_name = args.extract_plain_text().strip()
     if not plugin_name:
         await enable_plugin.finish("请输入插件名")
@@ -89,7 +90,7 @@ async def enable_plugin_handler(args: CommandArg):
     await enable_plugin.finish(f"已启用插件：{plugin_name}")
 
 @disable_plugin.handle()
-async def disable_plugin_handler(args: CommandArg):
+async def disable_plugin_handler(args: Annotated[Message, CommandArg()]):
     plugin_name = args.extract_plain_text().strip()
     if not plugin_name:
         await disable_plugin.finish("请输入插件名")
