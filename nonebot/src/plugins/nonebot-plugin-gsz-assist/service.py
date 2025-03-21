@@ -30,7 +30,7 @@ class GszService:
     @staticmethod
     def exist_gsz_user(username: str) -> bool:
         try:
-            basic_data = httpx.get(API_ENDPOINTS["basic"] + f'?name={username}').json()
+            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}&mobile=').json()
             if basic_data['code'] != 200:
                 raise Exception("获取basic_data失败")
         except Exception as e:
@@ -60,15 +60,15 @@ class GszService:
     @staticmethod
     def get_userinfo_by_name(username: str) -> BytesIO:
         try:
-            basic_data = httpx.get(API_ENDPOINTS["basic"] + f'?name={username}').json()
+            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}&mobile=').json()
             if basic_data['code'] != 200:
                 raise Exception("获取basic_data失败")
             custom_id= basic_data['data']['id']
             qq = basic_data['data']['qq']
-            tech_data = httpx.get(API_ENDPOINTS["tech"] + f'?customerId={custom_id}').json()
+            tech_data = httpx.post(API_ENDPOINTS["tech"] + f'?customerId={custom_id}').json()
             if tech_data['code'] != 200:
                 raise Exception("获取tech_data失败")
-            rateList_data = httpx.get(API_ENDPOINTS["rateList"] + f'?customerId={custom_id}').json()
+            rateList_data = httpx.post(API_ENDPOINTS["rateList"] + f'?customerId={custom_id}').json()
             if rateList_data['code'] != 200:
                 raise Exception("获取rateList_data失败")
         except Exception as e:
@@ -95,11 +95,11 @@ class GszService:
     @staticmethod
     def get_rank_top(username: str) -> BytesIO:
         try:
-            basic_data = httpx.get(API_ENDPOINTS["basic"] + f'?name={username}').json()
+            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}').json()
             if basic_data['code'] != 200:
                 raise Exception("获取basic_data失败")
             custom_id= basic_data['data']['id']
-            hate_data_top = httpx.get(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo=1&pageSize=10').json()
+            hate_data_top = httpx.post(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo=1&pageSize=10').json()
             if hate_data_top['code'] != 200:
                 raise Exception("获取hate_data_top失败")
         except Exception as e:
@@ -121,19 +121,19 @@ class GszService:
     @staticmethod
     def get_rank_last(username: str) -> BytesIO:
         try:
-            basic_data = httpx.get(API_ENDPOINTS["basic"] + f'?name={username}').json()
+            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}').json()
             if basic_data['code'] != 200:
                 raise Exception("获取basic_data失败")
             custom_id= basic_data['data']['id']
-            hate_data= httpx.get(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo=1&pageSize=10').json()
+            hate_data= httpx.post(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo=1&pageSize=10').json()
             if hate_data['code'] != 200:
                 raise Exception("获取hate_data失败")
             pageNo = hate_data["data"]["pages"]
-            hate_data = httpx.get(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo={pageNo}&pageSize=10').json()
+            hate_data = httpx.post(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo={pageNo}&pageSize=10').json()
             if hate_data['code'] != 200:
                 raise Exception("获取hate_data_last_page失败")
             hate_data_last = hate_data["data"]["records"]
-            hate_data = httpx.get(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo={pageNo-1}&pageSize=10').json()
+            hate_data = httpx.post(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo={pageNo-1}&pageSize=10').json()
             if hate_data['code'] != 200:
                 raise Exception("获取hate_data_last_page-1失败")
             hate_data_last = hate_data["data"]["records"] + hate_data_last
