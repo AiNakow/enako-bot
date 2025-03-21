@@ -30,7 +30,7 @@ __usage_help__ = """
 """
 
 __plugin_meta__ = PluginMetadata(
-    name="nonebot-plugin-gsz-assist",
+    name="公式战小助手",
     description="用于查询用户的公式战信息",
     usage=__usage_help__,
     config=Config,

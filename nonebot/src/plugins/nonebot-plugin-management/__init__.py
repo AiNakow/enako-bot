@@ -11,16 +11,29 @@ from nonebot.params import CommandArg
 from nonebot.params import Depends
 from nonebot.exception import MatcherException
 from nonebot.adapters.onebot.v11 import MessageSegment
-import random
+from nonebot import get_loaded_plugins
+from nonebot import get_driver
+from nonebot.drivers import Driver
 
+import random
 from .register import plugin_register
 from .config import Config
+from .config import PLUGIN_ADMIN
 from .common import *
 
+__usage_help__ = """
+/插件管理小助手
+用于管理当前机器人的插件
+/help
+/list
+/enable <插件名> （仅插件管理员）
+/disable <插件名> （仅插件管理员）
+"""
+
 __plugin_meta__ = PluginMetadata(
-    name="插件管理",
-    description="",
-    usage="",
+    name="插件管理小助手",
+    description="用于管理当前机器人的插件",
+    usage=__usage_help__,
     config=Config,
 )
 
@@ -28,7 +41,11 @@ config = get_plugin_config(Config)
 
 check_enable = on_fullmatch("enako", priority=1, block=True)
 echo_neko = on_message(priority=1, block=False)
-plugin_list = on_command("help", priority=10, block=True)
+help_plugin = on_command("help", priority=10, block=True)
+list_plugin = on_command("list", priority=10, block=True)
+enable_plugin = on_command("enable", permission=PLUGIN_ADMIN, priority=10, block=True)
+disable_plugin = on_command("disable", permission=PLUGIN_ADMIN, priority=10, block=True)
+
 
 
 @check_enable.handle()
@@ -41,16 +58,40 @@ async def check_enable_handler():
     except Exception as e:
         pass
 
-@plugin_list.handle()
+@help_plugin.handle()
 async def get_plgin_list_handler():
-    message = "\n可用的插件帮助：\n"
+    message = "可用的插件帮助：\n"
     for plugin in plugin_register.get_plugin_help_list():
         message += plugin.strip('\n') + "\n\n"
         
     message = message.strip('\n')
     try:
-        await plugin_list.finish(message, at_sender=True)
+        await help_plugin.finish(message, at_sender=True)
     except MatcherException:
         raise
     except Exception as e:
         pass 
+
+@list_plugin.handle()
+async def list_plugin_handler():
+    message = "当前已启用的插件：\n"
+    for plugin in plugin_register.get_plugin_list():
+        message += plugin.strip('\n') + "\n"
+    message = message.strip('\n')
+    await list_plugin.finish(message, at_sender=True)
+
+@enable_plugin.handle()
+async def enable_plugin_handler(args: CommandArg):
+    plugin_name = args.extract_plain_text().strip()
+    if not plugin_name:
+        await enable_plugin.finish("请输入插件名")
+    plugin_register.enable_plugin(plugin_name)
+    await enable_plugin.finish(f"已启用插件：{plugin_name}")
+
+@disable_plugin.handle()
+async def disable_plugin_handler(args: CommandArg):
+    plugin_name = args.extract_plain_text().strip()
+    if not plugin_name:
+        await disable_plugin.finish("请输入插件名")
+    plugin_register.disable_plugin(plugin_name)
+    await disable_plugin.finish(f"已禁用插件：{plugin_name}")

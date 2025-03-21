@@ -10,7 +10,7 @@ from .config import Config
 from .common import repeat_dict, repeat_dict_lock
 
 __plugin_meta__ = PluginMetadata(
-    name="nonebot-plugin-group-assist",
+    name="群聊小助手",
     description="群聊小助手，包含复读机等功能",
     usage="",
     config=Config,

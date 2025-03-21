@@ -21,8 +21,8 @@ __usage_help__ = """
 """
 
 __plugin_meta__ = PluginMetadata(
-    name="nonebot-plugin-mahjong_assist",
-    description="日麻小助手",
+    name="日麻小助手",
+    description="日麻小助手，提供一些日麻常用小工具",
     usage=(
         __usage_help__
         ),

@@ -30,7 +30,7 @@ __usage_help__ = """
 """
 
 __plugin_meta__ = PluginMetadata(
-    name="naga-assist",
+    name="naga小助手",
     description="本插件用于将雀魂牌谱格式转换为天凤牌谱格式，以及使用naga对牌谱进行分析",
     usage=__usage_help__,
     type="application",
