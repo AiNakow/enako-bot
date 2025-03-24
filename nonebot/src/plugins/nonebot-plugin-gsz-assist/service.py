@@ -8,6 +8,7 @@ import nest_asyncio
 from io import BytesIO
 
 from .userdata_manage import Userdata_manager
+from .ratedata_manage import Ratedata_manager
 from .common import *
 from .template_env import *
 
@@ -15,7 +16,9 @@ API_ENDPOINTS = {
         "basic": 'https://gsz.rmlinking.com/gszapi/customer/getCustomerByName',
         "tech": 'https://gsz.rmlinking.com/gszapi/score/tech',
         "rateList": 'https://gsz.rmlinking.com/gszapi/customer/getCustomerRateList',
-        "hate": 'https://gsz.rmlinking.com/gszapi/score/hate'
+        "hate": 'https://gsz.rmlinking.com/gszapi/score/hate',
+        "rateList": 'https://gsz.rmlinking.com/gszapi/customer/rate/list',
+        "findRanking": 'https://gsz.rmlinking.com/gszapi/customer/findRanking'
     }
 
 nest_asyncio.apply()
@@ -26,6 +29,7 @@ async def convert_html_to_pic(content):
 
 class GszService:
     userdata_manager = Userdata_manager()
+    ratedata_manager = Ratedata_manager()
 
     @staticmethod
     def exist_gsz_user(username: str) -> bool:
@@ -154,6 +158,62 @@ class GszService:
             flag=1,
             username=username,
             hate_data=hate_data_last
+            )
+        pic = asyncio.run(convert_html_to_pic(content=content))
+
+        return pic
+    
+    @staticmethod
+    def get_rate_id(rate_name: str) -> str | None:
+        try:
+            rate_data = httpx.post(API_ENDPOINTS["rateList"] + f'?&pageNo=1&pageSize=9&name={rate_name}&areaName=&province=&city=').json()
+            if rate_data['code'] != 200:
+                raise Exception("获取rate_data失败")
+        except Exception as e:
+            print(e)
+            return None
+        
+        if len(rate_data["data"]["records"]) == 0:
+            return None
+        return rate_data["data"]["records"][0]["id"]
+    
+    @staticmethod
+    def exist_rate(rate_name: str) -> bool:
+        return GszService.get_rate_id(rate_name) is not None
+        
+    @staticmethod
+    def get_rateinfo_by_group_id(group_id: str) -> object | None:
+        ratedata_manager = GszService.ratedata_manager
+        ratedata_list = ratedata_manager.get_ratedata(groupId_list=[group_id])
+        if len(ratedata_list) == 0:
+            return None
+        return ratedata_list[0]
+
+    @staticmethod
+    def bind_rateinfo(group_id: str, rate_name: str) -> bool:
+        if not GszService.exist_rate(rate_name):
+            return False
+        ratedata_manager = GszService.ratedata_manager
+        rate_id = GszService.get_rate_id(rate_name)
+        ratedata_manager.update_ratedata(ratedata_list=[{"groupId": group_id, "rateId": rate_id}])
+        return True
+    
+    @staticmethod
+    def get_rank_list(rate_id: str) -> BytesIO:
+        try:
+            rank_data = httpx.post(API_ENDPOINTS["findRanking"] + f'?pageNo=1&pageSize=10000&pid={rate_id}&sortField=rank&sortType=desc').json()
+            if rank_data['code'] != 200:
+                raise Exception("获取rank_data失败")
+        except Exception as e:
+            print(e)
+            raise e
+        
+        rank_data = rank_data["data"]["records"]
+        template = jinja_env.get_template('rank_list.html')
+        content = template.render(
+            tailwind_js=os.path.join(template_dir, 'tailwind.js'),
+            daisyui_css=os.path.join(template_dir, 'daisyui.css'),
+            rank_data=rank_data
             )
         pic = asyncio.run(convert_html_to_pic(content=content))
 

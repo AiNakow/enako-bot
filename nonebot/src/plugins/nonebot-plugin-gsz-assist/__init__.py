@@ -7,7 +7,7 @@ from nonebot.params import CommandArg
 from nonebot.params import Depends
 from nonebot.exception import MatcherException
 from nonebot.adapters.onebot.v11 import MessageSegment
-from nonebot.adapters import Event, Message, Bot
+from nonebot.adapters import Event, Message, Bot, GroupMessageEvent
 
 from typing import Annotated
 
@@ -27,6 +27,8 @@ __usage_help__ = """
 /好人榜
 /好人榜 @群友
 /好人榜 <用户名>
+/雀庄绑定 <雀庄名称> （仅限群管理员）
+/排行榜
 """
 
 __plugin_meta__ = PluginMetadata(
@@ -53,6 +55,8 @@ bind_gsz_userinfo = on_command("公式战绑定", priority=10, block=True)
 get_gsz_userinfo = on_command("吃鱼", priority=10, block=True)
 get_gsz_rank_top = on_command("仇恨榜", priority=10, block=True)
 get_gsz_rank_last = on_command("好人榜", priority=10, block=True)
+bind_gsz_rateinfo = on_command("雀庄绑定", priority=10, block=True)
+get_gsz_rank_list = on_command("排行榜", priority=10, block=True)
 
 @gsz_help.handle()
 async def gsz_help_handler(event: Event):
@@ -237,6 +241,82 @@ async def get_gsz_rank_last_handler(args: Annotated[Message, CommandArg()], even
     
     try:
         await get_gsz_rank_last.finish(message=message, at_sender=True)
+    except MatcherException:
+        raise
+    except Exception as e:
+        pass
+
+@bind_gsz_rateinfo.handle()
+async def bind_gsz_rateinfo_handler(args: Annotated[Message, CommandArg()], event: GroupMessageEvent):
+    if event.message_type != "group":
+        return
+    if not event.sender.role in ["admin", "owner"]:
+        return
+    arg_text = args.extract_plain_text()
+    if arg_text == "":
+        try:
+            await bind_gsz_rateinfo.finish(__usage_help__, at_sender=True)
+        except MatcherException:
+            raise
+        except Exception as e:
+            pass
+        return
+    
+    rate_name = arg_text.split(' ')[0]
+    if GszService.bind_rateinfo(group_id=event.group_id, rate_name=rate_name):
+        try:
+            await bind_gsz_rateinfo.finish(f"绑定成功，{rate_name}的雀庄信息已绑定到{event.group_id}", at_sender=True)
+        except MatcherException:
+            raise
+        except Exception as e:
+            pass
+    else:
+        try:
+            await bind_gsz_rateinfo.finish(f"绑定失败，雀庄名称可能不存在，请检查是否输入有误", at_sender=True)
+        except MatcherException:
+            raise
+        except Exception as e:
+            pass
+        
+@get_gsz_rank_list.handle()
+async def get_gsz_rank_list_handler(event: GroupMessageEvent):
+    if event.message_type != "group":
+        return
+    rateinfo = GszService.get_rateinfo_by_group_id(group_id=event.group_id)
+
+    if rateinfo is None:
+        try:
+            await get_gsz_rank_list.finish(f"未绑定雀庄信息，请群管使用\n/雀庄绑定 <雀庄名称>\n绑定雀庄信息", at_sender=True)
+        except MatcherException:
+            raise
+        except Exception as e:
+            pass
+        return
+
+    rate_id = rateinfo["rateId"]
+    rate_name = rateinfo["rateName"]
+    try:
+        await get_gsz_rank_list.send(f"正在获取{rate_name}的排行榜，请稍等...", at_sender=True)
+    except MatcherException:
+        raise
+    except Exception as e:
+        pass
+
+    try:
+        pic = GszService.get_rank_list(rate_id=rate_id)
+    except Exception as e:
+        try:
+            await get_gsz_rank_list.finish(f"获取排行榜失败，请检查是否输入有误", at_sender=True)
+        except MatcherException:
+            raise
+        except Exception as e:
+            pass
+        return
+    
+    message = MessageSegment.image(file=pic)
+
+    try:
+        await get_gsz_rank_list.finish(message=message, at_sender=True)
     except MatcherException:
         raise
     except Exception as e:

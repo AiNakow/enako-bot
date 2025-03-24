@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康麻将联合 - 段位排行榜</title>
+    <script src="{{ tailwind_js }}"></script>
+    <link href="{{ daisyui_css }}" rel="stylesheet" type="text/css" />
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 0.75rem;
+            transition: transform 0.2s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .font-mono {
+            letter-spacing: -0.05em;
+            color: #1e40af;
+        }
+        .badge {
+            padding: 0.5em 1em;
+            border-radius: 9999px;
+            font-weight: 500;
+        }
+        .table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+        }
+        .table td, .table th {
+            padding: 0.75rem 1rem;
+        }
+        .table tr:hover {
+            background-color: #f1f5f9;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-4">
+        <div class="card bg-base-100 shadow-xl p-4">
+            <h2 class="text-2xl font-bold text-[#1e40af] mb-4 text-center">段位排行榜</h2>
+            <div class="overflow-x-auto">
+                <table class="table w-full">
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>玩家名称</th>
+                            <th>段位</th>
+                            <th>RATE</th>
+                            <th>雀庄</th>
+                            <th>平均点数</th>
+                            <th>升段均顺</th>
+                            <th>升段局</th>
+                            <th>总局数</th>
+                            <th>一位率</th>
+                            <th>二位率</th>
+                            <th>三位率</th>
+                            <th>四位率</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in rank_data %}
+                        <tr>
+                            <td class="font-bold">{{ loop.index }}</td>
+                            <td class="font-medium">{{ record.name }}</td>
+                            <td>
+                                <span class="badge bg-blue-100 text-blue-800">{{ record.rankName }}</span>
+                            </td>
+                            <td class="font-mono">{{ record.rate }}</td>
+                            <td>{{ record.rateName }}</td>
+                            <td class="font-mono">{{ record.avgPoint }}</td>
+                            <td class="font-mono">{{ "%.2f"|format(record.upAvgPosition or 0) }}</td>
+                            <td class="font-mono">{{ record.upRate or 0 }}</td>
+                            <td>{{ record.totalRate }}</td>
+                            <td class="font-mono">{{ "%.1f"|format((record.position1 or 0) / record.totalRate * 100) }}%</td>
+                            <td class="font-mono">{{ "%.1f"|format((record.position2 or 0) / record.totalRate * 100) }}%</td>
+                            <td class="font-mono">{{ "%.1f"|format((record.position3 or 0) / record.totalRate * 100) }}%</td>
+                            <td class="font-mono">{{ "%.1f"|format((record.position4 or 0) / record.totalRate * 100) }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
