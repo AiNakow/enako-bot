@@ -32,10 +32,15 @@ async def convert_html_to_pic(content: str) -> BytesIO:
     return result
 
 async def convert_html_to_pic2(content: str) -> BytesIO:
-    async with get_new_page(viewport={"width": 1920, "height": 1080}) as page:
+    try:
+        page =  get_new_page(device_scale_factor=2, viewport={"width": 1920, "height": 1080})
         await page.set_content(content, wait_until="networkidle")
         pic = await page.screenshot(full_page=False, type="jpeg", quality=70, device_scale_factor=2)
+        await page.close()
         return pic
+    except Exception as e:
+        print(e)
+        raise e
 
 class GszService:
     userdata_manager = Userdata_manager()
