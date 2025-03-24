@@ -1,4 +1,4 @@
-from nonebot_plugin_htmlrender import html_to_pic, template_to_pic, md_to_pic
+from nonebot_plugin_htmlrender import html_to_pic, get_new_page
 from PIL import Image
 import httpx
 import json
@@ -23,13 +23,19 @@ API_ENDPOINTS = {
 
 nest_asyncio.apply()
 
-async def convert_html_to_pic(content): 
+async def convert_html_to_pic(content: str) -> BytesIO: 
     try:
         result = await html_to_pic(html=content, type="jpeg", quality=70, device_scale_factor=2, wait=1000) 
     except Exception as e:
         print(e)
         raise e
     return result
+
+async def convert_html_to_pic2(content: str) -> BytesIO:
+    async with get_new_page(viewport={"width": 1920, "height": 1080}) as page:
+        await page.set_content(content, wait_until="networkidle")
+        pic = await page.screenshot(full_page=False, type="jpeg", quality=70, device_scale_factor=2)
+        return pic
 
 class GszService:
     userdata_manager = Userdata_manager()
@@ -215,13 +221,14 @@ class GszService:
         rank_data = rank_data["data"]["records"]
         print(rank_data[0])
 
-        template = jinja_env.get_template('rank_list.md')
+        template = jinja_env.get_template('rank_list.html')
         content = template.render(
+            daisyui_css=os.path.join(template_dir, 'daisyui.css'),
+            tailwind_js=os.path.join(template_dir, 'tailwind.js'),
             rank_data=rank_data
         )
-
-        pic = asyncio.run(md_to_pic(md=content, type="jpeg", quality=70, device_scale_factor=2))
         
+        pic = asyncio.run(convert_html_to_pic2(content=content))
 
         # pic = asyncio.run(template_to_pic(
         #     template_path=template_dir, 
