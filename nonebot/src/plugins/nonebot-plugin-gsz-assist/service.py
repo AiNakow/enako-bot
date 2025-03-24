@@ -223,7 +223,8 @@ class GszService:
                 "daisyui_css": os.path.join(template_dir, 'daisyui.css'), 
                 "rank_data": rank_data
             },
-            wait=1000
+            wait=1000,
+            screenshot_timeout=60000
             ))
 
         return pic
