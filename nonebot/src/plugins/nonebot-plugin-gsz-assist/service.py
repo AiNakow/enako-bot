@@ -220,7 +220,7 @@ class GszService:
             rank_data=rank_data
         )
 
-        pic = asyncio.run(md_to_pic(content=content, type="jpeg", quality=70, device_scale_factor=2))
+        pic = asyncio.run(md_to_pic(md=content, type="jpeg", quality=70, device_scale_factor=2))
         
 
         # pic = asyncio.run(template_to_pic(
