@@ -213,7 +213,7 @@ class GszService:
             raise e
         
         rank_data = rank_data["data"]["records"]
-        print(rank_data)[0]
+        print(rank_data[0])
         template = jinja_env.get_template('rank_list.html')
         content = template.render(
             tailwind_js=os.path.join(template_dir, 'tailwind.js'),
