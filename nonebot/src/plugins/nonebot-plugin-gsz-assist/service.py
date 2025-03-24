@@ -1,4 +1,4 @@
-from nonebot_plugin_htmlrender import html_to_pic, template_to_pic
+from nonebot_plugin_htmlrender import html_to_pic, template_to_pic, md_to_pic
 from PIL import Image
 import httpx
 import json
@@ -214,17 +214,24 @@ class GszService:
         
         rank_data = rank_data["data"]["records"]
         print(rank_data[0])
+
+        template = jinja_env.get_template('rank_list.md')
+        content = template.render(
+            rank_data=rank_data
+        )
+
+        pic = asyncio.run(md_to_pic(content=content, type="jpeg", quality=70, device_scale_factor=2))
         
-        pic = asyncio.run(template_to_pic(
-            template_path=template_dir, 
-            template_name='rank_list.html',
-            templates={
-                "tailwind_js": os.path.join(template_dir, 'tailwind.js'), 
-                "daisyui_css": os.path.join(template_dir, 'daisyui.css'), 
-                "rank_data": rank_data
-            },
-            wait=1000,
-            screenshot_timeout=60000
-            ))
+
+        # pic = asyncio.run(template_to_pic(
+        #     template_path=template_dir, 
+        #     template_name='rank_list.html',
+        #     templates={
+        #     "tailwind_js": os.path.join(template_dir, 'tailwind.js'), 
+        #     "daisyui_css": os.path.join(template_dir, 'daisyui.css'), 
+        #     "rank_data": rank_data
+        #     },
+        #     wait=1000,
+        #     ))
 
         return pic
