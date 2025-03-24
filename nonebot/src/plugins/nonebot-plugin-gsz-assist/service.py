@@ -24,7 +24,11 @@ API_ENDPOINTS = {
 nest_asyncio.apply()
 
 async def convert_html_to_pic(content): 
-    result = await html_to_pic(html=content, type="jpeg", quality=80, device_scale_factor=2) 
+    try:
+        result = await html_to_pic(html=content, type="jpeg", quality=80, device_scale_factor=2) 
+    except Exception as e:
+        print(e)
+        raise e
     return result
 
 class GszService:
@@ -215,6 +219,7 @@ class GszService:
             daisyui_css=os.path.join(template_dir, 'daisyui.css'),
             rank_data=rank_data
             )
+        
         pic = asyncio.run(convert_html_to_pic(content=content))
 
         return pic

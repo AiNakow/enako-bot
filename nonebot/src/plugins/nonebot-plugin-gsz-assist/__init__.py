@@ -307,7 +307,7 @@ async def get_gsz_rank_list_handler(event: GroupMessageEvent):
         pic = GszService.get_rank_list(rate_id=rate_id)
     except Exception as e:
         try:
-            await get_gsz_rank_list.finish(f"获取排行榜失败，请检查是否输入有误", at_sender=True)
+            await get_gsz_rank_list.finish(f"获取排行榜失败，可能是网络波动，请稍后再试", at_sender=True)
         except MatcherException:
             raise
         except Exception as e:
