@@ -70,8 +70,9 @@
                 <div class="flex items-center gap-4">
                     <img src="data:image/png;base64,{{ userpic }}" alt="Avatar" class="w-32 h-32 rounded-lg">
                     <div>
-                        <h2 class="text-3xl font-bold text-[#1e40af]"></h2>
-                        <div class="mt-4">
+                        <h2 class="text-3xl font-bold text-[#1e40af] mb-2"></h2>
+                        <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg w-fit mb-1"></div>
+                        <div class="mt-2">
                             <p class="flex items-center gap-2 text-lg">
                                 <span class="text-yellow-500">🏆</span>
                                 <span>全国排名：</span>
@@ -210,6 +211,7 @@
             // document.querySelector('.flex.items-center.gap-4 img').src = avatarUrl;
 
             // 使用更精确的选择器
+            document.querySelector('.bg-blue-100').textContent = data.rateName;
             document.querySelector('.card .flex.items-center.gap-4 h2').textContent = data.name;
             document.querySelector('p:has(.text-yellow-500) span:last-child').textContent = `全国排名：${data.allRankNum}`;
             document.querySelector('p:has(.text-red-500) span:last-child').textContent = `雀庄排名：${data.rateRankNum}`;
