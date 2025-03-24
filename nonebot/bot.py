@@ -8,6 +8,7 @@ nonebot.init()
 driver = nonebot.get_driver()
 driver.register_adapter(onebot_Adapter)
 
+
 # 在这里加载插件
 # nonebot.load_builtin_plugins("echo")  # 内置插件
 nonebot.load_plugin("nonebot_plugin_htmlrender")  # 第三方插件

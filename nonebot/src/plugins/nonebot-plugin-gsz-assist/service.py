@@ -215,6 +215,7 @@ class GszService:
     
     @staticmethod
     def get_rank_list(rate_id: str) -> BytesIO:
+        print(rate_id)
         try:
             rank_data = httpx.post(API_ENDPOINTS["findRanking"] + f'?pageNo=1&pageSize=10000&pid={rate_id}&sortField=rank&sortType=desc').json()
             if rank_data['code'] != 200:

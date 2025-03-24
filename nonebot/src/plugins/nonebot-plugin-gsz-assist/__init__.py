@@ -311,7 +311,7 @@ async def get_gsz_rank_list_handler(event: GroupMessageEvent):
         except MatcherException:
             raise
         except Exception as e:
-            pass
+            print(e)
         return
     
     message = MessageSegment.image(file=pic)
