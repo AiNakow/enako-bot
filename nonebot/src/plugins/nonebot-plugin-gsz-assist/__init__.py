@@ -296,6 +296,8 @@ async def get_gsz_rank_list_handler(event: GroupMessageEvent):
 
     rate_id = rateinfo["rateId"]
     rate_name = rateinfo["rateName"]
+    print(rate_id)
+    print(rate_name)
     try:
         await get_gsz_rank_list.send(f"正在获取{rate_name}的排行榜，请稍等...", at_sender=True)
     except MatcherException:
