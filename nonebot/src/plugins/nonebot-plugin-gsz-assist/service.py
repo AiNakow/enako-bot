@@ -25,7 +25,7 @@ nest_asyncio.apply()
 
 async def convert_html_to_pic(content): 
     try:
-        result = await html_to_pic(html=content, type="jpeg", quality=70, device_scale_factor=2, wait=1000) 
+        result = await html_to_pic(html=content, type="jpeg", quality=70, device_scale_factor=2, wait=10000, screenshot_timeout=60000) 
     except Exception as e:
         print(e)
         raise e
@@ -213,6 +213,7 @@ class GszService:
             raise e
         
         rank_data = rank_data["data"]["records"]
+        print(rank_data)[0]
         template = jinja_env.get_template('rank_list.html')
         content = template.render(
             tailwind_js=os.path.join(template_dir, 'tailwind.js'),
