@@ -1,4 +1,5 @@
 from nonebot_plugin_htmlrender import html_to_pic, get_new_page
+from nonebot.log import logger
 from PIL import Image
 import httpx
 import json
@@ -33,8 +34,11 @@ async def convert_html_to_pic(content: str) -> BytesIO:
 
 async def convert_html_to_pic2(content: str) -> BytesIO:
     try:
-        page =  get_new_page(device_scale_factor=2, viewport={"width": 1920, "height": 1080})
+        page = get_new_page(device_scale_factor=2, viewport={"width": 1920, "height": 1080})
+        page.on("console", lambda msg: logger.debug(f"浏览器控制台: {msg.text}"))
+        await page.goto(f"file://{os.getcwd()}")
         await page.set_content(content, wait_until="networkidle")
+        await page.wait_for_timeout(1000)
         pic = await page.screenshot(full_page=False, type="jpeg", quality=70, device_scale_factor=2)
         await page.close()
         return pic
@@ -215,7 +219,6 @@ class GszService:
     
     @staticmethod
     def get_rank_list(rate_id: str) -> BytesIO:
-        print(rate_id)
         try:
             rank_data = httpx.post(API_ENDPOINTS["findRanking"] + f'?pageNo=1&pageSize=10000&pid={rate_id}&sortField=rank&sortType=desc').json()
             if rank_data['code'] != 200:
