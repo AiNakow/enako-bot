@@ -7,7 +7,8 @@ from nonebot.params import CommandArg
 from nonebot.params import Depends
 from nonebot.exception import MatcherException
 from nonebot.adapters.onebot.v11 import MessageSegment
-from nonebot.adapters import Event, Message, Bot, GroupMessageEvent
+from nonebot.adapters import Event, Message, Bot
+from nonebot.adapters.onebot.v11 import GroupMessageEvent
 
 from typing import Annotated
 
