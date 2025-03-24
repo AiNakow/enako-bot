@@ -15,7 +15,7 @@ from .template_env import *
 API_ENDPOINTS = {
         "basic": 'https://gsz.rmlinking.com/gszapi/customer/getCustomerByName',
         "tech": 'https://gsz.rmlinking.com/gszapi/score/tech',
-        "rateList": 'https://gsz.rmlinking.com/gszapi/customer/getCustomerRateList',
+        "customerRateList": 'https://gsz.rmlinking.com/gszapi/customer/getCustomerRateList',
         "hate": 'https://gsz.rmlinking.com/gszapi/score/hate',
         "rateList": 'https://gsz.rmlinking.com/gszapi/customer/rate/list',
         "findRanking": 'https://gsz.rmlinking.com/gszapi/customer/findRanking'
@@ -72,7 +72,7 @@ class GszService:
             tech_data = httpx.post(API_ENDPOINTS["tech"] + f'?customerId={custom_id}').json()
             if tech_data['code'] != 200:
                 raise Exception("获取tech_data失败")
-            rateList_data = httpx.post(API_ENDPOINTS["rateList"] + f'?customerId={custom_id}').json()
+            rateList_data = httpx.post(API_ENDPOINTS["customerRateList"] + f'?customerId={custom_id}').json()
             if rateList_data['code'] != 200:
                 raise Exception("获取rateList_data失败")
         except Exception as e:
@@ -195,7 +195,7 @@ class GszService:
             return False
         ratedata_manager = GszService.ratedata_manager
         rate_id = GszService.get_rate_id(rate_name)
-        ratedata_manager.update_ratedata(ratedata_list=[{"groupId": group_id, "rateId": rate_id}])
+        ratedata_manager.update_ratedata(ratedata_list=[{"groupId": group_id, "rateId": rate_id, "rateName": rate_name}])
         return True
     
     @staticmethod
