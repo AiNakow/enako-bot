@@ -38,7 +38,7 @@ class Ratedata_manager():
         except:
             return False
         db_cursor = db_connection.cursor()
-        db_cursor.execute("CREATE TABLE IF NOT EXISTS userdata(groupId TEXT PRIMARY KEY, rateId INT, rateName TEXT)")
+        db_cursor.execute("CREATE TABLE IF NOT EXISTS ratedata(groupId TEXT PRIMARY KEY, rateId INT, rateName TEXT)")
         db_connection.commit()
         db_cursor.close()
         db_connection.close()
