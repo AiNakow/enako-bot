@@ -40,14 +40,29 @@ __plugin_meta__ = PluginMetadata(
 
 config = get_plugin_config(Config)
 
+driver = get_driver()
+
 check_enable = on_fullmatch("enako", priority=1, block=True)
-echo_neko = on_message(priority=1, block=False)
+message_gateway = on_message(priority=1, block=False)
 help_plugin = on_command("help", priority=10, block=True)
 list_plugin = on_command("list", priority=10, block=True)
 enable_plugin = on_command("enable", permission=PLUGIN_ADMIN, priority=10, block=True)
 disable_plugin = on_command("disable", permission=PLUGIN_ADMIN, priority=10, block=True)
 
+@driver.on_startup
+async def on_startup():
+    print("插件管理小助手启动")
 
+@driver.on_shutdown
+async def on_shutdown():
+    print("插件管理小助手关闭")
+
+@message_gateway.handle()
+async def message_gateway_handler(event: Event):
+    if event.message_type != "group":
+        return
+    if event.message_type == "group":
+        print(event.message)
 
 @check_enable.handle()
 async def check_enable_handler():
