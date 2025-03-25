@@ -34,7 +34,7 @@ async def convert_html_to_pic(content: str) -> BytesIO:
 
 async def convert_html_to_pic2(content: str) -> BytesIO:
     try:
-        page = get_new_page(device_scale_factor=2, viewport={"width": 1920, "height": 1080})
+        page = await get_new_page(device_scale_factor=2, viewport={"width": 1920, "height": 1080})
         page.on("console", lambda msg: logger.debug(f"浏览器控制台: {msg.text}"))
         await page.goto(f"file://{os.getcwd()}")
         await page.set_content(content, wait_until="networkidle")
