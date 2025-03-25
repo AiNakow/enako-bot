@@ -33,13 +33,13 @@ async def convert_html_to_pic(content: str) -> BytesIO:
     return result
 
 async def convert_html_to_pic2(content: str) -> BytesIO:
-    async with get_new_page(device_scale_factor=2, viewport={"width": 1920, "height": 1080}) as page:
+    async with get_new_page(2.0) as page:
         try:
             page.on("console", lambda msg: logger.debug(f"浏览器控制台: {msg.text}"))
             await page.goto(f"file://{os.getcwd()}")
             await page.set_content(content, wait_until="networkidle")
             await page.wait_for_timeout(1000)
-            pic = await page.screenshot(full_page=False, type="jpeg", quality=70, device_scale_factor=2)
+            pic = await page.screenshot(full_page=True, type="jpeg", quality=70, timeout=30000)
             await page.close()
             return pic
         except Exception as e:
@@ -228,7 +228,6 @@ class GszService:
             raise e
         
         rank_data = rank_data["data"]["records"]
-        print(rank_data[0])
 
         template = jinja_env.get_template('rank_list.html')
         content = template.render(
