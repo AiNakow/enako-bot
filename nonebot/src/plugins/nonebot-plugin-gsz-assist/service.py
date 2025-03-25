@@ -220,7 +220,7 @@ class GszService:
     @staticmethod
     def get_rank_list(rate_id: str) -> BytesIO:
         try:
-            rank_data = httpx.post(API_ENDPOINTS["findRanking"] + f'?pageNo=1&pageSize=10000&pid={rate_id}&sortField=rank&sortType=desc').json()
+            rank_data = httpx.post(API_ENDPOINTS["findRanking"] + f'?pageNo=1&pageSize=100&pid={rate_id}&sortField=rank&sortType=desc').json()
             if rank_data['code'] != 200:
                 raise Exception("获取rank_data失败")
         except Exception as e:
@@ -228,8 +228,6 @@ class GszService:
             raise e
         
         rank_data = rank_data["data"]["records"]
-        if len(rank_data) > 100:
-            rank_data = rank_data[:100]
 
         template = jinja_env.get_template('rank_list.html')
         content = template.render(

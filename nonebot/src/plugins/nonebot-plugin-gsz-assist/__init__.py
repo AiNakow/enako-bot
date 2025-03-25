@@ -249,8 +249,6 @@ async def get_gsz_rank_last_handler(args: Annotated[Message, CommandArg()], even
 
 @bind_gsz_rateinfo.handle()
 async def bind_gsz_rateinfo_handler(args: Annotated[Message, CommandArg()], event: GroupMessageEvent):
-    if event.message_type != "group":
-        return
     if not event.sender.role in ["admin", "owner"]:
         return
     arg_text = args.extract_plain_text()
