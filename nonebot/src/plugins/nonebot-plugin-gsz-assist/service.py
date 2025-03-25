@@ -33,18 +33,18 @@ async def convert_html_to_pic(content: str) -> BytesIO:
     return result
 
 async def convert_html_to_pic2(content: str) -> BytesIO:
-    try:
-        page = await get_new_page(device_scale_factor=2, viewport={"width": 1920, "height": 1080})
-        page.on("console", lambda msg: logger.debug(f"浏览器控制台: {msg.text}"))
-        await page.goto(f"file://{os.getcwd()}")
-        await page.set_content(content, wait_until="networkidle")
-        await page.wait_for_timeout(1000)
-        pic = await page.screenshot(full_page=False, type="jpeg", quality=70, device_scale_factor=2)
-        await page.close()
-        return pic
-    except Exception as e:
-        print(e)
-        raise e
+    async with get_new_page(device_scale_factor=2, viewport={"width": 1920, "height": 1080}) as page:
+        try:
+            page.on("console", lambda msg: logger.debug(f"浏览器控制台: {msg.text}"))
+            await page.goto(f"file://{os.getcwd()}")
+            await page.set_content(content, wait_until="networkidle")
+            await page.wait_for_timeout(1000)
+            pic = await page.screenshot(full_page=False, type="jpeg", quality=70, device_scale_factor=2)
+            await page.close()
+            return pic
+        except Exception as e:
+            print(e)
+            raise e
 
 class GszService:
     userdata_manager = Userdata_manager()
