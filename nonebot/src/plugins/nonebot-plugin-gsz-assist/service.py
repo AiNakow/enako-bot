@@ -228,6 +228,8 @@ class GszService:
             raise e
         
         rank_data = rank_data["data"]["records"]
+        if len(rank_data) > 100:
+            rank_data = rank_data[:100]
 
         template = jinja_env.get_template('rank_list.html')
         content = template.render(
@@ -236,7 +238,7 @@ class GszService:
             rank_data=rank_data
         )
         
-        pic = asyncio.run(convert_html_to_pic2(content=content))
+        pic = asyncio.run(convert_html_to_pic(content=content))
 
         # pic = asyncio.run(template_to_pic(
         #     template_path=template_dir, 
