@@ -1,4 +1,5 @@
 from nonebot import get_plugin_config
+from nonebot.plugin import Plugin, get_loaded_plugins, get_plugin
 from nonebot.plugin import PluginMetadata
 from nonebot.permission import SUPERUSER
 from nonebot import on_command
@@ -7,13 +8,16 @@ from nonebot import on_message
 from nonebot.rule import to_me
 from nonebot.adapters import Message
 from nonebot.adapters import Event
+from nonebot.matcher import Matcher
+from nonebot.message import run_preprocessor
 from nonebot.params import CommandArg
 from nonebot.params import Depends
 from nonebot.exception import MatcherException
-from nonebot.adapters.onebot.v11 import MessageSegment
+from nonebot.adapters.onebot.v11 import MessageSegment, MessageEvent, GroupMessageEvent
 from nonebot import get_loaded_plugins
 from nonebot import get_driver
 from nonebot.drivers import Driver
+from nonebot.log import logger
 from typing import Annotated
 
 import random
@@ -43,26 +47,30 @@ config = get_plugin_config(Config)
 driver = get_driver()
 
 check_enable = on_fullmatch("enako", priority=1, block=True)
-message_gateway = on_message(priority=1, block=False)
 help_plugin = on_command("help", priority=10, block=True)
 list_plugin = on_command("list", priority=10, block=True)
-enable_plugin = on_command("enable", permission=PLUGIN_ADMIN, priority=10, block=True)
-disable_plugin = on_command("disable", permission=PLUGIN_ADMIN, priority=10, block=True)
+enable_plugin = on_command("启用", priority=10, block=True)
+disable_plugin = on_command("禁用", priority=10, block=True)
+
+def get_group_id(event: GroupMessageEvent):
+    return str(event.group_id)
 
 @driver.on_startup
 async def on_startup():
-    print("插件管理小助手启动")
+    plugins: set[Plugin] = get_loaded_plugins()
+    for plugin in plugins:
+        plugin_register.register(plugin)
 
 @driver.on_shutdown
 async def on_shutdown():
-    print("插件管理小助手关闭")
+    pass
 
-@message_gateway.handle()
-async def message_gateway_handler(event: Event):
-    if event.message_type != "group":
-        return
-    if event.message_type == "group":
-        print(event.message)
+@run_preprocessor
+async def messageEvent_preprocessor(event: GroupMessageEvent, matcher: Matcher):
+    plugin_name = get_plugin(matcher.plugin_name).metadata.name
+    if plugin_register.if_plugin_disable(plugin_name, get_group_id(event)):
+        logger.info(f"插件 {plugin_name} 已在群 {get_group_id(event)} 被禁用")
+        raise MatcherException(f"插件 {plugin_name} 已在群 {get_group_id(event)} 被禁用")
 
 @check_enable.handle()
 async def check_enable_handler():
@@ -75,9 +83,9 @@ async def check_enable_handler():
         pass
 
 @help_plugin.handle()
-async def get_plgin_list_handler():
+async def get_plgin_list_handler(event: GroupMessageEvent):
     message = "可用的插件帮助：\n"
-    for plugin in plugin_register.get_plugin_help_list():
+    for plugin in plugin_register.get_plugin_help_list(get_group_id(event)):
         message += plugin.strip('\n') + "\n\n"
         
     message = message.strip('\n')
@@ -89,25 +97,35 @@ async def get_plgin_list_handler():
         pass 
 
 @list_plugin.handle()
-async def list_plugin_handler():
+async def list_plugin_handler(event: GroupMessageEvent):
+
     message = "当前已启用的插件：\n"
-    for plugin in plugin_register.get_plugin_list():
+    for plugin in plugin_register.get_plugin_list(get_group_id(event))["enable"]:
+        message += plugin.strip('\n') + "\n"
+    message += "\n当前已禁用的插件：\n"
+    for plugin in plugin_register.get_plugin_list(get_group_id(event))["disable"]:
         message += plugin.strip('\n') + "\n"
     message = message.strip('\n')
     await list_plugin.finish(message, at_sender=True)
 
 @enable_plugin.handle()
-async def enable_plugin_handler(args: Annotated[Message, CommandArg()]):
+async def enable_plugin_handler(args: Annotated[Message, CommandArg()], event: GroupMessageEvent):
+    if event.sender.role not in ["admin", "owner"]:
+        await enable_plugin.finish("您没有权限执行该指令", at_sender=True)
+
     plugin_name = args.extract_plain_text().strip()
     if not plugin_name:
-        await enable_plugin.finish("请输入插件名")
-    plugin_register.enable_plugin(plugin_name)
-    await enable_plugin.finish(f"已启用插件：{plugin_name}")
+        await enable_plugin.finish("请输入插件名", at_sender=True)
+    plugin_register.enable_plugin(plugin_name, get_group_id(event))
+    await enable_plugin.finish(f"已启用插件：{plugin_name}", at_sender=True)
 
 @disable_plugin.handle()
-async def disable_plugin_handler(args: Annotated[Message, CommandArg()]):
+async def disable_plugin_handler(args: Annotated[Message, CommandArg()], event: GroupMessageEvent):
+    if event.sender.role not in ["admin", "owner"]:
+        await disable_plugin.finish("您没有权限执行该指令", at_sender=True)
+
     plugin_name = args.extract_plain_text().strip()
     if not plugin_name:
-        await disable_plugin.finish("请输入插件名")
-    plugin_register.disable_plugin(plugin_name)
-    await disable_plugin.finish(f"已禁用插件：{plugin_name}")
+        await disable_plugin.finish("请输入插件名", at_sender=True)
+    plugin_register.disable_plugin(plugin_name, get_group_id(event))
+    await disable_plugin.finish(f"已禁用插件：{plugin_name}", at_sender=True)
