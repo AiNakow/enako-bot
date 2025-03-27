@@ -1,21 +1,26 @@
+# 标准库
 import os
-
-from nonebot import get_plugin_config
-from nonebot.plugin import PluginMetadata
-from nonebot.permission import SUPERUSER
-from nonebot import on_command
-from nonebot.rule import to_me
-from nonebot.adapters import Message
-from nonebot.params import CommandArg
-from nonebot.params import Depends
-from nonebot.exception import MatcherException
-
 from typing import Annotated
+
+# nonebot 核心
+from nonebot import (
+    get_plugin_config,
+    on_command,
+)
+from nonebot.adapters import Message
+from nonebot.exception import MatcherException
+from nonebot.params import CommandArg, Depends
+from nonebot.permission import SUPERUSER
+from nonebot.plugin import PluginMetadata
+from nonebot.rule import to_me
+
+# 本地模块
+from .auto_naga import *
+from .common import *
 from .config import Config
 from .event_functions import *
 from .role_check import *
 from .userdata_manage import *
-from .auto_naga import *
 
 __usage_help__ = """
 /naga小助手

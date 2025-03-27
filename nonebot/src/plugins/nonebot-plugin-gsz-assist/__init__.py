@@ -1,20 +1,23 @@
-from nonebot import get_plugin_config
-from nonebot.plugin import PluginMetadata
-from nonebot.permission import SUPERUSER
-from nonebot import on_command
-from nonebot.adapters import Message
-from nonebot.params import CommandArg
-from nonebot.params import Depends
-from nonebot.exception import MatcherException
-from nonebot.adapters.onebot.v11 import MessageSegment
-from nonebot.adapters import Event, Message, Bot
-from nonebot.adapters.onebot.v11 import GroupMessageEvent
-
+# 标准库
 from typing import Annotated
 
+# nonebot 核心
+from nonebot import (
+    get_plugin_config,
+    on_command,
+)
+from nonebot.adapters import Bot, Event, Message
+from nonebot.adapters.onebot.v11 import GroupMessageEvent, MessageSegment
+from nonebot.exception import MatcherException
+from nonebot.params import CommandArg, Depends
+from nonebot.permission import SUPERUSER
+from nonebot.plugin import PluginMetadata
+
+# 本地模块
+from .common import *
 from .config import Config
 from .service import GszService
-from .common import *
+
 __usage_help__ = """
 /公式战小助手
 用于查询用户的公式战信息

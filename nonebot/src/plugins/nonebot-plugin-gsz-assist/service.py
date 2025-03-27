@@ -1,17 +1,22 @@
-from nonebot_plugin_htmlrender import html_to_pic, get_new_page
-from nonebot.log import logger
-from PIL import Image
+# 标准库
+import asyncio
+import base64
 import httpx
 import json
-import base64
-import asyncio
 import nest_asyncio
+import os
 from io import BytesIO
 
-from .userdata_manage import Userdata_manager
-from .ratedata_manage import Ratedata_manager
+# 第三方库
+from nonebot_plugin_htmlrender import get_new_page, html_to_pic
+from nonebot.log import logger
+from PIL import Image
+
+# 本地模块
 from .common import *
+from .ratedata_manage import Ratedata_manager
 from .template_env import *
+from .userdata_manage import Userdata_manager
 
 API_ENDPOINTS = {
         "basic": 'https://gsz.rmlinking.com/gszapi/customer/getCustomerByName',

@@ -1,13 +1,17 @@
-from nonebot import get_plugin_config
-from nonebot import on_message
-from nonebot import on
-from nonebot.plugin import PluginMetadata
-from nonebot.adapters import Event, Message, Bot
+# nonebot 核心
+from nonebot import (
+    get_plugin_config,
+    on,
+    on_message,
+)
+from nonebot.adapters import Bot, Event, Message
 from nonebot.exception import MatcherException
 from nonebot.internal.matcher import Matcher
+from nonebot.plugin import PluginMetadata
 
-from .config import Config
+# 本地模块
 from .common import repeat_dict, repeat_dict_lock
+from .config import Config
 
 __plugin_meta__ = PluginMetadata(
     name="群聊小助手",

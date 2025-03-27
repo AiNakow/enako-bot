@@ -1,5 +1,6 @@
 from nonebot.plugin import Plugin
 from .plugindata_manage import PluginDataManager
+from .config import config
 
 class PluginRegister:
     plugin_data_manager = PluginDataManager()
@@ -7,6 +8,7 @@ class PluginRegister:
     def __init__(self):
         self.plugin_list: list[Plugin] = []
         self.disable_dict: dict = {}
+        self.hidden_plugins: list[str] = config.hidden_plugins
         """
         {
             "plugin_name": {
@@ -19,6 +21,8 @@ class PluginRegister:
         self.load_plugin_setting()
 
     def register(self, plugin: Plugin):
+        if plugin.name in self.hidden_plugins:
+            return
         self.plugin_list.append(plugin)
 
     def load_plugin_setting(self) -> bool:

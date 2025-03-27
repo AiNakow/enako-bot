@@ -1,30 +1,33 @@
-from nonebot import get_plugin_config
-from nonebot.plugin import Plugin, get_loaded_plugins, get_plugin
-from nonebot.plugin import PluginMetadata
-from nonebot.permission import SUPERUSER
-from nonebot import on_command
-from nonebot import on_fullmatch
-from nonebot import on_message
-from nonebot.rule import to_me
-from nonebot.adapters import Message
-from nonebot.adapters import Event
-from nonebot.matcher import Matcher
-from nonebot.message import run_preprocessor
-from nonebot.params import CommandArg
-from nonebot.params import Depends
-from nonebot.exception import MatcherException
-from nonebot.adapters.onebot.v11 import MessageSegment, MessageEvent, GroupMessageEvent
-from nonebot import get_loaded_plugins
-from nonebot import get_driver
-from nonebot.drivers import Driver
-from nonebot.log import logger
+# 标准库
+import random
 from typing import Annotated
 
-import random
-from .register import plugin_register
-from .config import Config
-from .config import PLUGIN_ADMIN
+# nonebot 核心
+from nonebot import (
+    get_driver,
+    get_loaded_plugins,
+    get_plugin,
+    get_plugin_config,
+    on_command,
+    on_fullmatch,
+    on_message,
+)
+from nonebot.adapters import Event, Message
+from nonebot.adapters.onebot.v11 import GroupMessageEvent, MessageEvent, MessageSegment
+from nonebot.drivers import Driver
+from nonebot.exception import IgnoredException, MatcherException
+from nonebot.log import logger
+from nonebot.matcher import Matcher
+from nonebot.message import run_preprocessor
+from nonebot.params import CommandArg, Depends
+from nonebot.permission import SUPERUSER
+from nonebot.plugin import Plugin, PluginMetadata
+from nonebot.rule import to_me
+
+# 本地模块
 from .common import *
+from .config import Config, PLUGIN_ADMIN
+from .register import plugin_register
 
 __usage_help__ = """
 /插件管理小助手
@@ -70,7 +73,7 @@ async def messageEvent_preprocessor(event: GroupMessageEvent, matcher: Matcher):
     plugin_name = get_plugin(matcher.plugin_name).metadata.name
     if plugin_register.if_plugin_disable(plugin_name, get_group_id(event)):
         logger.info(f"插件 {plugin_name} 已在群 {get_group_id(event)} 被禁用")
-        raise MatcherException(f"插件 {plugin_name} 已在群 {get_group_id(event)} 被禁用")
+        raise IgnoredException(f"插件 {plugin_name} 已在群 {get_group_id(event)} 被禁用")
 
 @check_enable.handle()
 async def check_enable_handler():
@@ -110,7 +113,7 @@ async def list_plugin_handler(event: GroupMessageEvent):
 
 @enable_plugin.handle()
 async def enable_plugin_handler(args: Annotated[Message, CommandArg()], event: GroupMessageEvent):
-    if event.sender.role not in ["admin", "owner"]:
+    if event.sender.role not in ["admin", "owner"] and not PLUGIN_ADMIN(event):
         await enable_plugin.finish("您没有权限执行该指令", at_sender=True)
 
     plugin_name = args.extract_plain_text().strip()
@@ -121,7 +124,7 @@ async def enable_plugin_handler(args: Annotated[Message, CommandArg()], event: G
 
 @disable_plugin.handle()
 async def disable_plugin_handler(args: Annotated[Message, CommandArg()], event: GroupMessageEvent):
-    if event.sender.role not in ["admin", "owner"]:
+    if event.sender.role not in ["admin", "owner"] and not PLUGIN_ADMIN(event):
         await disable_plugin.finish("您没有权限执行该指令", at_sender=True)
 
     plugin_name = args.extract_plain_text().strip()
