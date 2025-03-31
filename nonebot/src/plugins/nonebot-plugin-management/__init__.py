@@ -34,8 +34,8 @@ __usage_help__ = """
 用于管理当前机器人的插件
 /help
 /list
-/enable <插件名> （仅插件管理员）
-/disable <插件名> （仅插件管理员）
+/启用 <插件名> （仅插件管理员）
+/禁用 <插件名> （仅插件管理员）
 """
 
 __plugin_meta__ = PluginMetadata(
