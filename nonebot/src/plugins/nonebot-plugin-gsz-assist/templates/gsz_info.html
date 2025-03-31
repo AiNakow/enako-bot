@@ -315,7 +315,7 @@
                 }
 
                 // 检查是否已经满足升段条件
-                if (currentSum <= maxAllowedSum) {
+                if (Math.floor(currentSum) <= maxAllowedSum) {
                     relaxedTargetSum = maxAllowedSum - oldCurrentSum;
                 } else {
                     let replacedCount = 0;
