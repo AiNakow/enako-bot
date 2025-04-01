@@ -91,7 +91,7 @@ class PluginRegister:
         }])
             
 
-    def if_plugin_disable(self, plugin_name: str, group_id: str):
+    def if_plugin_disable(self, plugin_name: str, group_id: str) -> bool:
         plugin_disable_data = self.disable_dict.get(plugin_name, {})
         print(plugin_disable_data)
         print(group_id)
@@ -100,5 +100,11 @@ class PluginRegister:
         if not plugin_disable_data["global_disable"] and group_id not in plugin_disable_data["group_id"]:
             return False
         return True
+    
+    def if_plugin_exist(self, plugin_name: str) -> bool:
+        for plugin in self.plugin_list:
+            if plugin.metadata.name == plugin_name:
+                return True
+        return False
         
 plugin_register = PluginRegister()

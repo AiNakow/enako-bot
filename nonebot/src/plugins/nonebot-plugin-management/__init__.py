@@ -119,6 +119,8 @@ async def enable_plugin_handler(args: Annotated[Message, CommandArg()], event: G
     plugin_name = args.extract_plain_text().strip()
     if not plugin_name:
         await enable_plugin.finish("请输入插件名", at_sender=True)
+    if not plugin_register.if_plugin_exist(plugin_name):
+        await enable_plugin.finish("插件不存在", at_sender=True)
     plugin_register.enable_plugin(plugin_name, get_group_id(event))
     await enable_plugin.finish(f"已启用插件：{plugin_name}", at_sender=True)
 
@@ -131,6 +133,8 @@ async def disable_plugin_handler(args: Annotated[Message, CommandArg()], event: 
     if not plugin_name:
         await disable_plugin.finish("请输入插件名", at_sender=True)
 
+    if not plugin_register.if_plugin_exist(plugin_name):
+        await disable_plugin.finish("插件不存在", at_sender=True)
     if plugin_name == manager_name:
         await disable_plugin.finish("您不能禁用插件管理小助手", at_sender=True)
     plugin_register.disable_plugin(plugin_name, get_group_id(event))
