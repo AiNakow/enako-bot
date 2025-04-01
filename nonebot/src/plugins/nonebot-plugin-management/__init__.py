@@ -49,6 +49,7 @@ config = get_plugin_config(Config)
 
 driver = get_driver()
 
+helper = on_command("插件管理小助手", priority=1, block=True)
 check_enable = on_fullmatch("enako", priority=1, block=True)
 help_plugin = on_command("help", priority=10, block=True)
 list_plugin = on_command("list", priority=10, block=True)
@@ -74,6 +75,10 @@ async def messageEvent_preprocessor(event: GroupMessageEvent, matcher: Matcher):
     if plugin_register.if_plugin_disable(plugin_name, get_group_id(event)):
         logger.info(f"插件 {plugin_name} 已在群 {get_group_id(event)} 被禁用")
         raise IgnoredException(f"插件 {plugin_name} 已在群 {get_group_id(event)} 被禁用")
+
+@helper.handle()
+async def helper_handler(event: GroupMessageEvent):
+    await helper.finish(__usage_help__, at_sender=True)
 
 @check_enable.handle()
 async def check_enable_handler():
