@@ -39,7 +39,7 @@ __usage_help__ = """
 """
 
 __plugin_meta__ = PluginMetadata(
-    name="插件管理小助手",
+    name=manager_name,
     description="用于管理当前机器人的插件",
     usage=__usage_help__,
     config=Config,
@@ -130,5 +130,8 @@ async def disable_plugin_handler(args: Annotated[Message, CommandArg()], event: 
     plugin_name = args.extract_plain_text().strip()
     if not plugin_name:
         await disable_plugin.finish("请输入插件名", at_sender=True)
+
+    if plugin_name == manager_name:
+        await disable_plugin.finish("您不能禁用插件管理小助手", at_sender=True)
     plugin_register.disable_plugin(plugin_name, get_group_id(event))
     await disable_plugin.finish(f"已禁用插件：{plugin_name}", at_sender=True)

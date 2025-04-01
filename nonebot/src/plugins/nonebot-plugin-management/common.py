@@ -2,6 +2,7 @@ import os
 
 RAND_RESPONSE = ["喵呜", "nya~", "ニャーコ！", "Meow~", "等死吧你"]
 
+manager_name = "插件管理小助手"
 plugin_dir = os.path.dirname(os.path.abspath(__file__))
 data_dir = "/app/plugin_data/management"
 if not os.path.exists(data_dir):

@@ -8,7 +8,7 @@ from .handler import *
 from .handler import __usage_help__
 
 __plugin_meta__ = PluginMetadata(
-    name="qqshell`",
+    name="qqshell",
     description="qqshell",
     usage=__usage_help__,
     config=Config,
