@@ -33,7 +33,7 @@ async def convert_html_to_pic(content: str) -> BytesIO:
     try:
         result = await html_to_pic(html=content, type="jpeg", quality=70, device_scale_factor=2, wait=1000) 
     except Exception as e:
-        print(e)
+        logger.debug(e)
         raise e
     return result
 
@@ -57,13 +57,21 @@ class GszService:
 
     @staticmethod
     def exist_gsz_user(username: str) -> bool:
+        timeout_config = httpx.Timeout(30.0, connect=15.0, read=15.0)
         try:
-            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}&mobile=').json()
+            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}&mobile=', timeout=timeout_config).json()
             if basic_data['code'] != 200:
                 raise Exception("获取basic_data失败")
+        except httpx.ConnectError as e:
+            logger.debug(f"连接失败：{e}")
+        except httpx.ReadTimeout as e:
+            logger.debug(f"读取超时：{e}")
+        except httpx.HTTPStatusError as e:
+            logger.debug(f"响应状态码错误: {e.response.status_code}")
+        except httpx.RequestError as e:
+            logger.debug(f"请求失败：{e}")
         except Exception as e:
-            print(e)
-            return False
+            logger.debug(f"其他错误：{e}")
         
         if basic_data['data'] == "":
             return False
@@ -87,22 +95,33 @@ class GszService:
 
     @staticmethod
     def get_userinfo_by_name(username: str) -> BytesIO:
+        logger.debug(f"开始获取用户信息: {username}")
+        timeout_config = httpx.Timeout(30.0, connect=15.0, read=15.0)
+        logger.debug(f"设置请求超时时间: {timeout_config}")
         try:
-            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}&mobile=').json()
+            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}&mobile=', timeout=timeout_config).json()
             if basic_data['code'] != 200:
                 raise Exception("获取basic_data失败")
             custom_id= basic_data['data']['id']
             qq = basic_data['data']['qq']
-            tech_data = httpx.post(API_ENDPOINTS["tech"] + f'?customerId={custom_id}').json()
+            tech_data = httpx.post(API_ENDPOINTS["tech"] + f'?customerId={custom_id}', timeout=timeout_config).json()
             if tech_data['code'] != 200:
                 raise Exception("获取tech_data失败")
-            rateList_data = httpx.post(API_ENDPOINTS["customerRateList"] + f'?customerId={custom_id}').json()
+            rateList_data = httpx.post(API_ENDPOINTS["customerRateList"] + f'?customerId={custom_id}', timeout=timeout_config).json()
             if rateList_data['code'] != 200:
                 raise Exception("获取rateList_data失败")
+        except httpx.ConnectError as e:
+            logger.debug(f"连接失败：{e}")
+        except httpx.ReadTimeout as e:
+            logger.debug(f"读取超时：{e}")
+        except httpx.HTTPStatusError as e:
+            logger.debug(f"响应状态码错误: {e.response.status_code}")
+        except httpx.RequestError as e:
+            logger.debug(f"请求失败：{e}")
         except Exception as e:
-            print(e)
-            raise e
+            logger.debug(f"其他错误：{e}")
 
+        logger.debug(f"获取用户信息: {username}({qq})")
         raw_pic = httpx.get(f'https://q.qlogo.cn/headimg_dl?dst_uin={qq}&spec=640&img_type=jpg').content
 
         template = jinja_env.get_template('gsz_info.html')
@@ -116,7 +135,9 @@ class GszService:
             tech_data=json.dumps(tech_data["data"]), 
             rateList_data=json.dumps(rateList_data["data"])
             )
-        pic = asyncio.run(convert_html_to_pic(content=content))
+        logger.debug(f"渲染模板内容: {content[:100]}...")  # 仅打印前100个字符以避免过长输出
+        pic = asyncio.run(convert_html_to_pic2(content=content))
+        logger.debug(f"获取用户信息图片: {username}({qq})")
         
         return pic
 
