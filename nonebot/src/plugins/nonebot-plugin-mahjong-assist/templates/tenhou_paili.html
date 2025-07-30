@@ -768,7 +768,7 @@
                 return '<a href="?' + g + "=" + d + '" class=D onmouseover="daFocus(this,' + c + "," + f + ');" onmouseout="daUnfocus();" >' + L(b, a) + "</a>"
             }
             function L(b, a) {
-                return '<img src="{{ static_path }}' + b + '.gif" border=0 ' + (a ? a : "") + " />"
+                return '<img src="{{ static_path }}t/' + b + '.gif" border=0 ' + (a ? a : "") + " />"
             }
             function M(b) {
                 return -1 == b ? "和了" : 0 == b ? "聴牌" : b + "向聴"
@@ -909,7 +909,7 @@
                 for (k = 0; k < t.length; ++k) {
                     v = t[k].i;
                     d += "<tr id=mda" + v + " ><td>";
-                    34 > v && (d += "打</td><td>" + ('<img src="https://cdn.tenhou.net/2/a/' + H(4 * v + 1) + '.gif" class=D />') + "</td><td>",
+                    34 > v && (d += "打</td><td>" + ('<img src="{{ static_path }}a/' + H(4 * v + 1) + '.gif" class=D />') + "</td><td>",
                         g += "打" + H(4 * v + 1) + " ");
                     // 1
                     var uchi = H(4 * v + 1);
