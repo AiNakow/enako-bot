@@ -36,7 +36,7 @@ class MahjongService:
     @staticmethod
     def tenhou_paili_analyse(analyse_type, tehai_input) -> BytesIO:
         t = jinja_env.get_template("tenhou_paili.html")
-        content = t.render(jsPath=os.path.join(template_dir, "1008.js"), typeStr=analyse_type, tehaiInputStr=tehai_input)
+        content = t.render(static_path=os.path.join(template_dir, "static/"), typeStr=analyse_type, tehaiInputStr=tehai_input)
         
         pic = asyncio.run(convert_html_to_pic2(content=content))
 
