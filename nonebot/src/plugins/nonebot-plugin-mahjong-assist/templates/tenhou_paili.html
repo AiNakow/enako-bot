@@ -919,7 +919,7 @@
                     c = t[k].q;
                     for (p = 0; p < l.length; ++p)
                         r = H(4 * l[p] + 1),
-                            d += '<a href="?' + a + "=" + (c + r) + '" class=D onmouseover="daFocus(this,' + v + ');" onmouseout="daUnfocus();"><img src="https://cdn.tenhou.net/2/a/' + r + '.gif" border=0 /></a>',
+                            d += '<a href="?' + a + "=" + (c + r) + '" class=D onmouseover="daFocus(this,' + v + ');" onmouseout="daUnfocus();"><img src="{{ static_path }}a/' + r + '.gif" border=0 /></a>',
                             g += H(4 * l[p] + 1);
                     // 1
                     d += "</td><td>" + t[k].n + "枚</td><td>]</td></tr>";
