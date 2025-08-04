@@ -233,8 +233,11 @@
             const conditionElements = conditionDiv.querySelectorAll('p');
 
             if (data.rankRule.round === null){
-                statElements[2].textContent = "已通关";
-                statElements[3].textContent = "已通关";
+                const recentGames = rateListData
+                    .sort((a, b) => new Date(a.createTime) - new Date(b.createTime))
+                    .map(game => parseInt(game.sort));
+                statElements[2].textContent = recentGames.reduce((sum, pos) => sum + pos, 0) / recentGames.length;
+                statElements[3].textContent = recentGames.reduce((sum, pos) => sum + pos, 0);
                 const fastestConditionText = `🔹 当前最快的升段条件是：恭喜你成功通关！`;
                 const relaxedConditionText = `🔹 当前最宽松升段条件是：恭喜你成功通关！`;
                 
