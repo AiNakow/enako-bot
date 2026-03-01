@@ -157,3 +157,6 @@ auto-naga/.git/
 test/
 app/
 
+# model
+*.onnx
+

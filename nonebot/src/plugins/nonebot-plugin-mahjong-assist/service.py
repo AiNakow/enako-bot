@@ -8,8 +8,10 @@ from io import BytesIO
 from nonebot_plugin_htmlrender import get_new_page, html_to_pic
 from nonebot.log import logger
 
+from .config import config
 from .common import *
 from .template_env import *
+from .infer_hand import *
 
 nest_asyncio.apply()
 
@@ -34,7 +36,7 @@ async def convert_html_to_pic2(content: str) -> BytesIO:
 class MahjongService:
 
     @staticmethod
-    def tenhou_paili_analyse(analyse_type, tehai_input) -> BytesIO:
+    def tenhou_paili_analyse(analyse_type: str, tehai_input: str) -> BytesIO:
         t = jinja_env.get_template("tenhou_paili.html")
         content = t.render(static_path=os.path.join(template_dir, "static/"), typeStr=analyse_type, tehaiInputStr=tehai_input)
         
@@ -48,5 +50,20 @@ class MahjongService:
 
         return result_pic
     
+    @staticmethod
+    def get_hand_from_image(image_url: str) -> str:
+        with httpx.Client() as client:
+            resp = client.get(image_url)
+            resp.raise_for_status()
+            image = resp.content
+        imgsz = config.model_img_size
+
+        model_path = os.path.join(model_dir, f"best_{imgsz}.onnx")
+        names_path = os.path.join(model_dir, "names.json")
+        rt = MahjongONNXRuntime(model_path, names_path, imgsz=imgsz, ort_intra_threads=1, ort_inter_threads=1)
+
+        out = rt.predict_bytes(image)
+
+        return out["tenhou"]
     
         

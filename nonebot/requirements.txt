@@ -59,3 +59,7 @@ websockets==12.0
 yarl==1.9.4
 pillow==11.0.0
 nest_asyncio==1.6.0
+onnxruntime==1.18.1
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+nonebot-plugin-waiter==0.8.1
