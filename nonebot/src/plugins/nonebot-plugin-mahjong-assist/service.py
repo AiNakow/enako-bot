@@ -56,7 +56,10 @@ class MahjongService:
             resp = client.get(image_url)
             resp.raise_for_status()
             image = resp.content
-        imgsz = config.model_img_size
+        imgsz = config.input_img_size
+
+        with open(data_collection_file, "a", encoding="utf-8") as f:
+            f.write(image_url + "\n")
 
         model_path = os.path.join(model_dir, f"best_{imgsz}.onnx")
         names_path = os.path.join(model_dir, "names.json")

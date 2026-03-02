@@ -39,6 +39,9 @@ __plugin_meta__ = PluginMetadata(
 if not os.path.exists(model_dir):
     os.mkdir(model_dir)
 
+if not os.path.exists(data_dir):
+    os.mkdir(data_dir)
+
 get_help = on_command("日麻小助手", priority=10, block=True)
 get_mahjong_helper = on_command("面麻计分器", priority=10, block=True)
 get_tenhou_paili = on_command("天凤牌理", priority=10, block=True)
