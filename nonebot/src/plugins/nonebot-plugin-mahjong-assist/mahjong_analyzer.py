@@ -96,12 +96,12 @@ def calculate_standard_shanten(hand_count: list[int]) -> int:
 
     def search_standard(current_count: list[int], start: int, melds: int, taatsu: int, pairs: int):
         nonlocal best_shanten
-        key = f"{''.join(map(str, hand_count))}{start}{melds}{taatsu}{pairs}"
+        key = f"{''.join(map(str, current_count))}{start}{melds}{taatsu}{pairs}"
         if key in memory:
             return
         memory.add(key)
 
-        if sum(hand_count) == 0:
+        if sum(current_count) == 0:
             useful_taatsu = min(taatsu, target_melds - melds)
             best_shanten = min(best_shanten, 2 * target_melds - 2 * melds - useful_taatsu - min(pairs, 1))
             return
