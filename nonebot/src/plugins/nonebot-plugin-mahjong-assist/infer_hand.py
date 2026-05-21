@@ -270,7 +270,7 @@ if __name__ == "__main__":
         raise SystemExit(2)
 
     model_path, names_path, img_path = sys.argv[1], sys.argv[2], sys.argv[3]
-    rt = MahjongONNXRuntime(model_path, names_path, imgsz=640, ort_intra_threads=1, ort_inter_threads=1)
+    rt = MahjongONNXRuntime(model_path, names_path, imgsz=1536, ort_intra_threads=1, ort_inter_threads=1)
 
     with open(img_path, "rb") as f:
         b = f.read()

@@ -1,0 +1,276 @@
+{% set analysis = result if result is defined and result else all_result %}
+{% set mode_label = mode_label|default('标准形（包含国士七对）') %}
+{% set draw_label = '听' if analysis.is_tenpai else '摸' %}
+{% set tile_root = tile_base_url|default('tiles') %}
+{% macro tile_img(tile_id, size='normal') -%}
+  <img class="tile tile--{{ size }}" src="{{ tile_root }}/{{ tile_id }}.svg" alt="{{ tile_id }}" title="{{ tile_id }}">
+{%- endmacro %}
+{% macro status_text(item) -%}
+  {%- if item.is_agari -%}
+    和牌
+  {%- elif item.is_tenpai -%}
+    听牌
+  {%- else -%}
+    {{ item.shanten }}向听
+  {%- endif -%}
+{%- endmacro %}
+{% macro total_for(item) -%}
+  {%- if item.kind == 'draw' -%}
+    {{ item.total_draws }}
+  {%- elif item.discards -%}
+    {{ item.discards[0].total_waits }}
+  {%- else -%}
+    0
+  {%- endif -%}
+{%- endmacro %}
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>牌理分析结果</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f5f2;
+      --panel: #ffffff;
+      --ink: #20231f;
+      --muted: #667064;
+      --line: #d9ded5;
+      --accent: #0f7b63;
+      --accent-weak: #e5f4ee;
+      --warn: #9b3d2f;
+      --shadow: 0 10px 26px rgba(32, 35, 31, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+      line-height: 1.5;
+    }
+
+    .page {
+      width: min(1120px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 28px 0 40px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 4px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fafbf8;
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .section {
+      margin-top: 18px;
+      padding: 20px 24px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .section__title {
+      margin: 0 0 14px;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    .section__title--center {
+      margin-bottom: 18px;
+      text-align: center;
+    }
+
+    .hand-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .hand {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      align-items: flex-end;
+    }
+
+    .hand-status {
+      color: var(--accent);
+      font-size: clamp(26px, 4vw, 42px);
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .tile {
+      display: inline-block;
+      width: 38px;
+      height: auto;
+      vertical-align: middle;
+      filter: drop-shadow(0 2px 2px rgba(32, 35, 31, 0.16));
+    }
+
+    .tile--small {
+      width: 32px;
+    }
+
+    .tile--normal {
+      width: 38px;
+    }
+
+    .result-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .result-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      min-height: 56px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfa;
+    }
+
+    .result-row--draw {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .action {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--warn);
+      font-size: 16px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .waits {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .waits__label {
+      margin-right: 2px;
+      color: var(--accent);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .total {
+      color: var(--muted);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .empty {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(100vw - 20px, 640px);
+        padding-top: 10px;
+      }
+
+      .section {
+        padding: 16px;
+      }
+
+      .hand-row,
+      .result-row,
+      .result-row--draw {
+        grid-template-columns: 1fr;
+      }
+
+      .hand-status {
+        justify-self: end;
+      }
+
+      .tile {
+        width: 34px;
+      }
+
+      .tile--small {
+        width: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="section" aria-labelledby="hand-title">
+      <h2 class="section__title" id="hand-title" hidden>手牌</h2>
+      <div class="hand-row">
+        <div class="hand">
+          {% for tile in analysis.hand %}
+            {{ tile_img(tile) }}
+          {% endfor %}
+        </div>
+        <div class="hand-status">{{ status_text(analysis) }}（{{ analysis.tile_count }}枚）</div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="detail-title">
+      <h2 class="section__title section__title--center" id="detail-title">{{ mode_label }}的计算结果</h2>
+
+      {% if analysis.kind == 'discard' %}
+        {% if analysis.discards %}
+          <div class="result-list">
+            {% for item in analysis.discards %}
+              <div class="result-row">
+                <div class="action">打{{ tile_img(item.discard.id, 'small') }}</div>
+                <div class="waits">
+                  <span class="waits__label">{{ draw_label }}</span>
+                  {% for wait in item.waits %}
+                    {{ tile_img(wait.id, 'small') }}
+                  {% endfor %}
+                </div>
+                <div class="total">合计{{ item.total_waits }}枚</div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="empty">暂无可展示的切牌结果。</p>
+        {% endif %}
+      {% else %}
+        <div class="result-list">
+          <div class="result-row result-row--draw">
+            <div class="waits">
+              <span class="waits__label">{{ draw_label }}</span>
+              {% for draw in analysis.draws %}
+                {{ tile_img(draw.id, 'small') }}
+              {% endfor %}
+            </div>
+            <div class="total">合计{{ analysis.total_draws }}枚</div>
+          </div>
+        </div>
+      {% endif %}
+    </section>
+  </main>
+</body>
+</html>

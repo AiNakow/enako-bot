@@ -12,6 +12,7 @@ from .config import config
 from .common import *
 from .template_env import *
 from .infer_hand import *
+from . import mahjong_analyzer 
 
 nest_asyncio.apply()
 
@@ -36,17 +37,25 @@ async def convert_html_to_pic2(content: str) -> BytesIO:
 class MahjongService:
 
     @staticmethod
-    def tenhou_paili_analyse(analyse_type: str, tehai_input: str) -> BytesIO:
-        t = jinja_env.get_template("tenhou_paili.html")
-        content = t.render(static_path=os.path.join(template_dir, "static/"), typeStr=analyse_type, tehaiInputStr=tehai_input)
-        
+    def tenhou_paili_analyse(tehai_input: str, mode: int) -> BytesIO:
+        t = jinja_env.get_template("paili_result.html")
+        tile_base_url = os.path.join(template_dir, "static/tiles")
+
+        result = mahjong_analyzer.analyze_hand(tehai_input, mode)
+        content = t.render(
+            result=result,
+            mode=mode,
+            mode_label=MODE_LABELS[mode],
+            tile_base_url=tile_base_url,
+        )
+
         pic = asyncio.run(convert_html_to_pic2(content=content))
 
         image = Image.open(BytesIO(pic))
         rect = ((2560 - 1400) / 2, 0, (2560 - 1400) / 2 + 1400, 1400)
         crop_image = image.crop(rect)
         result_pic = BytesIO()
-        crop_image.save(result_pic, format="jpeg")
+        image.save(result_pic, format="jpeg")
 
         return result_pic
     

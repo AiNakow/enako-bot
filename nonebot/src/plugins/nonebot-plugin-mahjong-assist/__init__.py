@@ -16,14 +16,15 @@ from typing import Annotated
 from .common import *
 from .config import Config
 from .service import MahjongService
+from . import mahjong_analyzer
 import os
 
 __usage_help__ = """
 /日麻小助手
 请按照如下格式发送指令：
 /面麻计分器
-/天凤牌理 <标准形/一般形> <天凤格式手牌>
-/天凤牌理 <天凤格式手牌>
+/牌理 <标准形/一般形> <天凤格式手牌>
+/牌理 <天凤格式手牌>
 /识图 牌理 <标准形/一般形>
 """
 
@@ -44,7 +45,7 @@ if not os.path.exists(data_dir):
 
 get_help = on_command("日麻小助手", priority=10, block=True)
 get_mahjong_helper = on_command("面麻计分器", priority=10, block=True)
-get_tenhou_paili = on_command("天凤牌理", priority=10, block=True)
+get_tenhou_paili = on_command("牌理", aliases={"天凤牌理"}, priority=10, block=True)
 get_mahjong_ocr = on_command("识图", priority=10, block=True)
 
 @get_help.handle()
@@ -76,13 +77,16 @@ async def get_tenhou_paili_handler(args: Annotated[Message, CommandArg()]):
         except Exception as e:
             pass 
     arg_list = arg_text.split(' ')
-    analyse_type = 'q'
+    mode = 0
+    if not mahjong_analyzer.is_valid_handstr(arg_list[0]):
+        await get_tenhou_paili.finish("手牌不符合规则，请修改后重新发送", at_sender=True)
+
     if len(arg_list) == 1 and "标准" not in arg_list[0] and "一般" not in arg_list[0]:
-        pic = MahjongService.tenhou_paili_analyse(analyse_type, arg_list[0])
+        pic = MahjongService.tenhou_paili_analyse(arg_list[0], mode)
     elif len(arg_list) > 1:
         if "一般" in arg_list[0]:
-            analyse_type = 'p'
-        pic = MahjongService.tenhou_paili_analyse(analyse_type, arg_list[1])
+            mode = 1
+        pic = MahjongService.tenhou_paili_analyse(arg_list[1], mode)
     else:
         try:
             await get_tenhou_paili.finish(__usage_help__, at_sender=True)
