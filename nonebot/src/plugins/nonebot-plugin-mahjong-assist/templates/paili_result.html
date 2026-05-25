@@ -2,8 +2,14 @@
 {% set mode_label = mode_label|default('标准形（包含国士七对）') %}
 {% set draw_label = '听' if analysis.is_tenpai else '摸' %}
 {% set tile_root = tile_base_url|default('tiles') %}
-{% macro tile_img(tile_id, size='normal') -%}
-  <img class="tile tile--{{ size }}" src="{{ tile_root }}/{{ tile_id }}.svg" alt="{{ tile_id }}" title="{{ tile_id }}">
+{% macro tile_img(tile_id, size='normal', is_good_shape=false) -%}
+  {%- if is_good_shape -%}
+    <span class="tile-highlight" title="{{ tile_id }}：可形成好型">
+      <img class="tile tile--{{ size }}" src="{{ tile_root }}/{{ tile_id }}.svg" alt="{{ tile_id }}">
+    </span>
+  {%- else -%}
+    <img class="tile tile--{{ size }}" src="{{ tile_root }}/{{ tile_id }}.svg" alt="{{ tile_id }}" title="{{ tile_id }}">
+  {%- endif -%}
 {%- endmacro %}
 {% macro status_text(item) -%}
   {%- if item.is_agari -%}
@@ -19,6 +25,13 @@
     {{ item.total_draws }}
   {%- elif item.discards -%}
     {{ item.discards[0].total_waits }}
+  {%- else -%}
+    0
+  {%- endif -%}
+{%- endmacro %}
+{% macro good_shape_rate(good_shape_count, total_count) -%}
+  {%- if total_count > 0 -%}
+    {{ (good_shape_count * 100 / total_count)|round|int }}
   {%- else -%}
     0
   {%- endif -%}
@@ -134,6 +147,17 @@
       width: 38px;
     }
 
+    .tile-highlight {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px;
+      border: 2px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent-weak);
+      box-shadow: 0 0 0 2px rgba(15, 123, 99, 0.12);
+    }
+
     .result-list {
       display: grid;
       gap: 10px;
@@ -166,8 +190,8 @@
     }
 
     .waits {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
       gap: 6px;
       align-items: center;
       min-width: 0;
@@ -180,10 +204,22 @@
       white-space: nowrap;
     }
 
+    .waits__tiles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      min-width: 0;
+    }
+
     .total {
       color: var(--muted);
       font-weight: 700;
       white-space: nowrap;
+    }
+
+    .good-shape {
+      color: var(--accent);
     }
 
     .empty {
@@ -246,11 +282,15 @@
                 <div class="action">打{{ tile_img(item.discard.id, 'small') }}</div>
                 <div class="waits">
                   <span class="waits__label">{{ draw_label }}</span>
-                  {% for wait in item.waits %}
-                    {{ tile_img(wait.id, 'small') }}
-                  {% endfor %}
+                  <div class="waits__tiles">
+                    {% for wait in item.waits %}
+                      {{ tile_img(wait.id, 'small', analysis.shanten == 1 and wait.id in item.good_shape_draws) }}
+                    {% endfor %}
+                  </div>
                 </div>
-                <div class="total">合计{{ item.total_waits }}枚</div>
+                <div class="total">
+                  合计{{ item.total_waits }}枚{% if analysis.shanten == 1 %} <span class="good-shape">好型率{{ good_shape_rate(item.good_shape_count, item.total_waits) }}%（{{ item.good_shape_count }}枚）</span>{% endif %}
+                </div>
               </div>
             {% endfor %}
           </div>
@@ -262,11 +302,15 @@
           <div class="result-row result-row--draw">
             <div class="waits">
               <span class="waits__label">{{ draw_label }}</span>
-              {% for draw in analysis.draws %}
-                {{ tile_img(draw.id, 'small') }}
-              {% endfor %}
+              <div class="waits__tiles">
+                {% for draw in analysis.draws %}
+                  {{ tile_img(draw.id, 'small', analysis.shanten == 1 and draw.id in analysis.good_shape_draws) }}
+                {% endfor %}
+              </div>
             </div>
-            <div class="total">合计{{ analysis.total_draws }}枚</div>
+            <div class="total">
+              合计{{ analysis.total_draws }}枚{% if analysis.shanten == 1 %} <span class="good-shape">好型率{{ good_shape_rate(analysis.good_shape_count, analysis.total_draws) }}%（{{ analysis.good_shape_count }}枚）</span>{% endif %}
+            </div>
           </div>
         </div>
       {% endif %}
