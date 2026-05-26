@@ -129,11 +129,11 @@ async def mahjong_ocr_start(args: Annotated[Message, CommandArg()], state: T_Sta
 
     if arg_list[0] == "牌理":
         hand = MahjongService.get_hand_from_image(url)
-        analyse_type = 'q'
+        mode = 0
         if len(arg_list) > 1 and "一般" in arg_list[1]:
-            analyse_type = 'p'
+            mode = 1
 
-        pic = MahjongService.tenhou_paili_analyse(analyse_type, hand)
+        pic = MahjongService.tenhou_paili_analyse(hand, mode)
         message = MessageSegment.image(file=pic)
         
         await get_mahjong_ocr.finish(message=message, at_sender=True)
