@@ -83,6 +83,8 @@ def str_to_count(hand_str: str) -> list[int]:
 
     hand_count = [0] * 34
     for tile in hand_list:
+        if tile[0] == '0':
+            tile = '5' + tile[1]
         hand_count[TILE_INDEX[tile]] += 1
 
     return hand_count
