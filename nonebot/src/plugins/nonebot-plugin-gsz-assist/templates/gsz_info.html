@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康麻将联合 - 数据预览</title>
+    <script src="{{ tailwind_js }}"></script>
+    <link href="{{ daisyui_css }}" rel="stylesheet" type="text/css" />
+    <script src="{{ chart_js }}"></script>
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: "Microsoft YaHei", sans-serif;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 0.75rem;
+            transition: transform 0.2s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        canvas {
+            min-height: 250px;
+            width: 100% !important;
+        }
+        #rankTrendChart {
+            min-height: 0 !important;
+        }
+        .font-mono {
+            letter-spacing: -0.05em;
+            color: #1e40af;
+        }
+        .badge {
+            padding: 0.5em 1em;
+            border-radius: 9999px;
+            font-weight: 500;
+        }
+        .text-2xl.font-bold.text-blue-900 {
+            font-family: "DIN Alternate", "Arial", sans-serif;
+        }
+        .text-4xl.font-bold {
+            color: #1e40af;
+            font-weight: 800;
+        }
+        .rank-divider {
+            height: 2px;
+            background-color: #94a3b8;
+            margin: 4px auto;
+        }
+        @media (max-width: 768px) {
+            canvas {
+                min-height: 200px;
+            }
+            .text-4xl {
+                font-size: 1.75rem;
+            }
+            .text-2xl {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-4">
+        <!-- 玩家信息 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div class="card bg-base-100 shadow-xl p-4">
+                <div class="flex items-center gap-4">
+                    <img src="data:image/png;base64,{{ userpic }}" alt="Avatar" class="w-32 h-32 rounded-lg">
+                    <div>
+                        <h2 class="text-3xl font-bold text-[#1e40af] mb-2"></h2>
+                        <div class="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg w-fit mb-1"></div>
+                        <div class="mt-2">
+                            <p class="flex items-center gap-2 text-lg">
+                                <span class="text-yellow-500">🏆</span>
+                                <span>全国排名：</span>
+                            </p>
+                            <p class="flex items-center gap-2 text-lg">
+                                <span class="text-red-500">🏅</span>
+                                <span>雀庄排名：</span>
+                            </p>
+                            <p class="flex items-center gap-2 text-lg">
+                                <span class="text-blue-500">🎮</span>
+                                <span>总局数：</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-base-100 shadow-xl p-4">
+                <h3 class="text-lg font-bold mb-4"></h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-[#1e40af]"></div>
+                        <div class="text-sm">最高点数</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-[#1e40af]"></div>
+                        <div class="text-sm">平均点数</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-[#1e40af]"></div>
+                        <div class="text-sm">当前均顺</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-[#1e40af]"></div>
+                        <div class="text-sm">顺位之和</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-base-100 shadow-xl p-4 flex items-center justify-center">
+                <div class="text-center">
+                    <div class="text-4xl font-bold text-[#1e40af] mb-2"></div>
+                    <div class="text-xl"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 顺位数据 -->
+        <div class="card bg-base-100 shadow-xl p-4 mb-4">
+            <h3 class="text-lg font-bold mb-2 text-center">最近顺位数据（旧 → 新）</h3>
+            <!-- 近十场顺位折线图 -->
+            <div class="mb-4">
+                <h4 class="text-sm font-bold mb-2 text-center text-gray-500">近10场顺位走势</h4>
+                <div style="height: 125px; width: 66.67%; margin: 0 auto;">
+                    <canvas id="rankTrendChart"></canvas>
+                </div>
+            </div>
+            <div id="rankGroups" class="flex flex-wrap gap-4 mb-4 justify-center">
+                <!-- 场次分组将通过JavaScript动态添加 -->
+            </div>
+            <div class="bg-[#1e40af] text-white p-4 rounded-lg">
+                <div class="w-fit mx-auto">
+                    <p class="text-left">🔹 当前最快的升段条件是 半庄顺位之和 ≤ </p>
+                    <p class="text-left">🔹 当前最宽松升段条件是 半庄顺位之和 ≤ </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="card bg-base-100 shadow-xl p-4">
+                <h3 class="text-lg font-bold mb-4"></h3>
+                <canvas id="radarChart"></canvas>
+            </div>
+            <div class="card bg-base-100 shadow-xl p-4">
+                <h3 class="text-lg font-bold mb-4"></h3>
+                <canvas id="doughnutChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API接口
+        const API_ENDPOINTS = {
+            basic: 'https://gsz.rmlinking.com/gszapi/customer/getCustomerByName',
+            tech: 'https://gsz.rmlinking.com/gszapi/score/tech',
+            rateList: 'https://gsz.rmlinking.com/gszapi/customer/getCustomerRateList'
+        };
+
+        // 数据获取函数
+        function fetchData(playerName = '{{ username }}') {
+            /*
+            try {
+                // 获取基本信息
+                const basicResponse = await fetch(`${API_ENDPOINTS.basic}?name=${encodeURIComponent(playerName)}`);
+                const basicResult = await basicResponse.json();
+                
+                if (basicResult.code !== 200) {
+                    throw new Error(basicResult.message || '基础数据获取失败');
+                }
+
+                const basicData = basicResult.data;
+
+                // 获取技术数据
+                const techResponse = await fetch(`${API_ENDPOINTS.tech}?customerId=${basicData.id}`);
+                const techResult = await techResponse.json();
+
+                if (techResult.code !== 200) {
+                    throw new Error(techResult.message || '技术数据获取失败');
+                }
+
+                const techData = techResult.data;
+
+                // 获取最近对局数据
+                const rateListResponse = await fetch(`${API_ENDPOINTS.rateList}?customerId=${basicData.id}`);
+                const rateListResult = await rateListResponse.json();
+
+                if (rateListResult.code !== 200) {
+                    throw new Error(rateListResult.message || '对局数据获取失败');
+                }
+
+            } catch (error) {
+                console.error('API请求失败:', error);
+                throw error;
+            }
+            */
+
+            const basicData = JSON.parse('{{ basic_data }}')
+            const techData = JSON.parse('{{ tech_data }}')
+            const rateListData = JSON.parse('{{ rateList_data }}')
+            const ratePageData = JSON.parse('{{ ratePage_data }}')
+
+            return {
+                    basicData,
+                    techData,
+                    rateListData,
+                    ratePageData
+                };
+        }
+
+        // 更新玩家信息
+        function updatePlayerInfo(data, rateListData) {
+            // 更新头像
+            //const avatarUrl = `https://q.qlogo.cn/headimg_dl?dst_uin=${data.qq}&spec=640&img_type=jpg`;
+            // document.querySelector('.flex.items-center.gap-4 img').src = avatarUrl;
+
+            // 使用更精确的选择器
+            document.querySelector('.bg-blue-100').textContent = data.rateName;
+            document.querySelector('.card .flex.items-center.gap-4 h2').textContent = data.name;
+            document.querySelector('p:has(.text-yellow-500) span:last-child').textContent = `全国排名：${data.allRankNum}`;
+            document.querySelector('p:has(.text-red-500) span:last-child').textContent = `雀庄排名：${data.rateRankNum}`;
+            document.querySelector('p:has(.text-blue-500) span:last-child').textContent = `总局数：${data.totalRate}`;
+            
+            // 更新段位信息
+            document.querySelector('.card .text-center .text-4xl.font-bold').textContent = data.rankRule.rank;
+            document.querySelector('.card .text-center .text-xl').textContent = `RATE #${data.rate}`;
+
+            // 更新数据预览
+            const previewCard = document.querySelector('.card:has(h3)');
+            const statElements = previewCard.querySelectorAll('.text-2xl.font-bold.text-\\[\\#1e40af\\]');
+            statElements[0].textContent = data.maxPoint;
+            statElements[1].textContent = data.avgPoint;
+
+            
+            // 更新升段条件
+            const conditionDiv = document.querySelector('.bg-\\[\\#1e40af\\]');
+            const conditionElements = conditionDiv.querySelectorAll('p');
+
+            if (data.rankRule.round === null){
+                const recentGames = rateListData
+                    .sort((a, b) => new Date(a.createTime) - new Date(b.createTime))
+                    .map(game => parseInt(game.sort));
+                statElements[2].textContent = recentGames.reduce((sum, pos) => sum + pos, 0) / recentGames.length;
+                statElements[3].textContent = recentGames.reduce((sum, pos) => sum + pos, 0);
+                const fastestConditionText = `🔹 当前最快的升段条件是：恭喜你成功通关！`;
+                const relaxedConditionText = `🔹 当前最宽松升段条件是：恭喜你成功通关！`;
+                
+                conditionElements[0].textContent = fastestConditionText;
+                conditionElements[1].textContent = relaxedConditionText;
+            }
+            else {
+                const avgPositionElement = statElements[2];
+                avgPositionElement.textContent = data.upAvgPosition.toFixed(2);
+                avgPositionElement.insertAdjacentHTML('afterend', 
+                    `<div class="text-xs text-gray-500">（≤${data.rankRule.avg}）可升段</div>`
+                );
+                const sumPositionElement = statElements[3];
+                sumPositionElement.textContent = data.sumPosition;
+                sumPositionElement.insertAdjacentHTML('afterend', 
+                    `<div class="text-xs text-gray-500">（≤${data.rankRule.value}）可升段</div>`
+                );
+
+                // 获取最近的对局顺位数据
+                const recentGames = rateListData
+                    .sort((a, b) => new Date(a.createTime) - new Date(b.createTime))
+                    .map(game => parseInt(game.sort));
+
+                const requiredGames = data.rankRule.round; // 需要的总局数
+                const maxAllowedSum = data.rankRule.value; // 允许的最大顺位和
+                const avgPosition = parseFloat(data.rankRule.avg); // 平均顺位要求
+
+                let neededGames = 0, targetSum;
+
+                const latestGames = recentGames.slice(-requiredGames);
+                let currentSum = latestGames.reduce((sum, pos) => sum + pos, 0);
+                let oldCurrentSum = currentSum;
+                // 如果局数不足
+                if (recentGames.length < requiredGames) {
+                    // 计算需要填充的局数
+                    const remainingGames = requiredGames - recentGames.length;
+                    // 填充所有剩余局数为1位
+                    currentSum = currentSum + remainingGames;
+                    
+                    neededGames = remainingGames;
+                }
+                // 获取最近requiredGames局的顺位数据
+
+                // 检查是否已经满足升段条件
+                if (currentSum <= maxAllowedSum) {
+                    targetSum = maxAllowedSum - oldCurrentSum;
+                } else {
+                    // 从最老的一局开始尝试替换为1位
+                    let replacedCount = 0;
+                    let tempSum = currentSum;
+                    
+                    for (let i = 0; i < latestGames.length; i++) {
+                        // 计算替换这一局为1位后的顺位和
+                        tempSum = tempSum - latestGames[i] + 1;
+                        replacedCount++;
+                        
+                        if (tempSum <= maxAllowedSum) {
+                            // 找到满足条件的情况
+                            neededGames += replacedCount;
+                            targetSum = neededGames + (maxAllowedSum - tempSum);
+                            break;
+                        }
+                    }
+                }
+
+                // 计算最宽松升段条件
+                let relaxedNeededGames = 0, relaxedTargetSum;
+                
+                // 获取最近requiredGames局的顺位数据
+                currentSum = latestGames.reduce((sum, pos) => sum + pos, 0);
+                oldCurrentSum = currentSum;
+                if (recentGames.length < requiredGames) {
+                    // 如果还未满足局数要求
+                    const remainingGames = requiredGames - recentGames.length;
+                    // 填充所有剩余局数为avgPosition
+                    currentSum = currentSum + (remainingGames * avgPosition);
+                    relaxedNeededGames = remainingGames;
+                }
+
+                // 检查是否已经满足升段条件
+                if (Math.floor(currentSum) <= maxAllowedSum) {
+                    relaxedTargetSum = maxAllowedSum - oldCurrentSum;
+                } else {
+                    let replacedCount = 0;
+                    let tempSum = currentSum;
+                    let bestAvgPosition = 1;
+                    let bestNeededGames = 0;
+                    for (let i = 0; i < latestGames.length; i++) {
+                        tempSum = tempSum - latestGames[i];
+                        replacedCount++;
+                        if (tempSum <= maxAllowedSum && (maxAllowedSum - tempSum) / replacedCount > bestAvgPosition) {
+                            bestAvgPosition = (maxAllowedSum - tempSum) / replacedCount;
+                            bestNeededGames = replacedCount;
+                        }
+                    }
+                    
+                    relaxedTargetSum = Math.ceil(relaxedNeededGames * bestAvgPosition + bestNeededGames * bestAvgPosition);
+                    relaxedNeededGames += bestNeededGames;
+                /*
+                    // 从最老的一局开始尝试替换为avgPosition
+                    let replacedCount = 0;
+                    let tempSum = currentSum;
+                    
+                    for (let i = 0; i < latestGames.length; i++) {
+                        // 计算替换这一局为avgPosition后的顺位和
+                        tempSum = tempSum - latestGames[i] + avgPosition;
+                        replacedCount++;
+                        
+                        if (tempSum <= maxAllowedSum) {
+                            // 找到满足条件的情况
+                            relaxedNeededGames += replacedCount;
+                            // 计算目标顺位和：替换的局数*平均顺位 + 剩余可用的顺位和
+                            relaxedTargetSum = Math.ceil(relaxedNeededGames * avgPosition + (maxAllowedSum - tempSum));
+                            break;
+                        }
+                    }
+                */
+                }
+
+                const fastestConditionText = `🔹 当前最快的升段条件是：${neededGames}半庄顺位之和 ≤ ${targetSum}`;
+                const relaxedConditionText = `🔹 当前最宽松升段条件是：${relaxedNeededGames}半庄顺位之和 ≤ ${relaxedTargetSum}`;
+                
+                conditionElements[0].textContent = fastestConditionText;
+                conditionElements[1].textContent = relaxedConditionText;
+            }
+        }
+
+        // 初始化6维图
+        function initRadarChart(techData) {
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            // 将数据标准化到0-100范围
+            const normalizeValue = (value, max = 1) => Math.min(100, Math.max(0, (value / max) * 100));
+            
+            const normalizedData = [
+                normalizeValue(techData.fire - 40000, 6000),    // 火力
+                normalizeValue(techData.defense, 0.9),        // 防守
+                normalizeValue(techData.stabilize, 0.6),      // 稳定
+                normalizeValue(4 - techData.lucky, 3),       // 运势
+                normalizeValue(techData.tech - 1000, 1000),     // 技术
+                normalizeValue(techData.attack, 0.3)          // 进攻
+            ];
+
+            return new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['火力', '防守', '稳定', '运势', '技术', '进攻'],
+                    datasets: [{
+                        label: '能力值',
+                        data: normalizedData,
+                        backgroundColor: 'rgba(30, 64, 175, 0.2)',
+                        borderColor: 'rgba(30, 64, 175, 0.8)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(30, 64, 175, 1)',
+                    }]
+                },
+                options: {
+                    animation: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                display: false
+                            },
+                            grid: {
+                                color: 'rgba(30, 64, 175, 0.2)'
+                            },
+                            angleLines: {
+                                color: 'rgba(30, 64, 175, 0.2)'
+                            },
+                            pointLabels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // 初始化环形图
+        function initDoughnutChart(techData) {
+            const ctx = document.getElementById('doughnutChart').getContext('2d');
+            const data = [
+                techData.ratio1 * 100,
+                techData.ratio2 * 100,
+                techData.ratio3 * 100,
+                techData.ratio4 * 100
+            ];
+
+            return new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['一位', '二位', '三位', '四位'],
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            'rgb(59, 130, 246)',  // 更深的蓝色
+                            'rgb(163, 230, 53)',  // 保持绿色不变
+                            'rgb(250, 204, 21)',  // 保持黄色不变
+                            'rgb(248, 113, 113)'  // 保持红色不变
+                        ],
+                        borderWidth: 2,
+                        borderColor: 'white'
+                    }]
+                },
+                options: {
+                    animation: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: {
+                                    size: 14
+                                },
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                borderWidth: 0,
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    return data.labels.map((label, i) => ({
+                                        text: `${label} - ${data.datasets[0].data[i].toFixed(2)}%`,
+                                        fillStyle: data.datasets[0].backgroundColor[i],
+                                        index: i
+                                    }));
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 初始化近十场顺位折线图
+        function initRankTrendChart(ratePageData, userName) {
+            const ctx = document.getElementById('rankTrendChart').getContext('2d');
+
+            // 按时间升序排列（旧 → 新）
+            const sortedRecords = (ratePageData || [])
+                .slice()
+                .sort((a, b) => new Date(a.logtime) - new Date(b.logtime));
+
+            // 提取当前用户在每场对局中的顺位（name1=1位 ... name4=4位）
+            const name = (userName || '').trim();
+            const positions = sortedRecords.map(record => {
+                if ((record.name1 || '').trim() === name) return 1;
+                if ((record.name2 || '').trim() === name) return 2;
+                if ((record.name3 || '').trim() === name) return 3;
+                if ((record.name4 || '').trim() === name) return 4;
+                return null;
+            });
+
+            const labels = sortedRecords.map((_, index) => `第${index + 1}场`);
+
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '顺位',
+                        data: positions,
+                        borderColor: 'rgba(30, 64, 175, 0.9)',
+                        backgroundColor: 'rgba(30, 64, 175, 0.08)',
+                        borderWidth: 2,
+                        fill: true,
+                        spanGaps: true,
+                        clip: false,
+                        pointBackgroundColor: positions.map(p => ({
+                            1: 'rgb(59, 130, 246)',
+                            2: 'rgb(163, 230, 53)',
+                            3: 'rgb(250, 204, 21)',
+                            4: 'rgb(248, 113, 113)'
+                        }[p] || 'rgba(30, 64, 175, 1)')),
+                        pointBorderColor: 'white',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    animation: false,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { top: 8, bottom: 8 }
+                    },
+                    scales: {
+                        y: {
+                            reverse: true,
+                            min: 1,
+                            max: 4,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return value + '位';
+                                },
+                                font: { size: 12 }
+                            },
+                            grid: { color: 'rgba(30, 64, 175, 0.1)' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const idx = context.dataIndex;
+                                    const pos = context.parsed.y;
+                                    const record = sortedRecords[idx];
+                                    const time = (record.logtime || '').replace('T', ' ').slice(5);
+                                    const point = record ? record['point' + pos] : '';
+                                    return `${pos}位 · ${point}点（${time}）`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 更新顺位数据
+        function updateRankHistory(rateListData, basicData) {
+            const rankGroupsElement = document.getElementById('rankGroups');
+            const rankRound = basicData.rankRule.round;
+            // 处理最近顺位数据
+            const recentRanks = rateListData
+                .sort((a, b) => new Date(a.createTime) - new Date(b.createTime)) // 按时间升序排序
+                .map(game => game.sort) // 提取顺位
+                .join('');
+            
+            // 将顺位数据分组（每5个一组）
+            const ranks = recentRanks.match(/.{1,5}/g) || [];
+            let html = '';
+            
+            let startGame = 0;
+            let endGame = 0;
+            ranks.forEach((group, index) => {
+                startGame = index * 5 + 1;
+                endGame = startGame + 4;
+                if (rankRound != null && endGame > rankRound) {
+                    endGame = rankRound
+                }
+
+                html += `
+                    <div class="text-center">
+                        <div class="text-sm text-gray-500">${startGame}-${endGame}</div>
+                        <div class="rank-divider" style="width: ${endGame - startGame + 1}ch;"></div>
+                        <div class="text-lg font-mono">${group}</div>
+                    </div>
+                `;
+            });
+
+            while (endGame < rankRound) {
+                startGame = endGame + 1;
+                endGame = startGame + 4;
+                if (endGame > rankRound) {
+                    endGame = rankRound
+                }
+
+                html += `
+                    <div class="text-center">
+                        <div class="text-sm text-gray-500">${startGame}-${endGame}</div>
+                        <div class="rank-divider" style="width: ${endGame - startGame + 1}ch;"></div>
+                        <div class="text-lg font-mono"></div>
+                    </div>
+                `;
+            }
+
+            rankGroupsElement.innerHTML = html;
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const data = fetchData();
+                updatePlayerInfo(data.basicData, data.rateListData);
+                initRadarChart(data.techData);
+                initDoughnutChart(data.techData);
+                initRankTrendChart(data.ratePageData, data.basicData.name);
+                updateRankHistory(data.rateListData, data.basicData);
+            } catch (error) {
+                console.error('初始化失败:', error);
+               // alert('数据加载失败，请刷新页面重试');
+            }
+        });
+    </script>
+</body>
+</html> 

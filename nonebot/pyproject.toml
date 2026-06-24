@@ -1,0 +1,17 @@
+[project]
+name = "enako-bot"
+version = "0.1.0"
+description = "enako-bot"
+readme = "README.md"
+requires-python = ">=3.8, <4.0"
+dependencies = [
+    "nonebot-adapter-qq>=1.7.1",
+    "nonebot2[aiohttp,httpx]>=2.5.0",
+]
+
+[tool.nonebot]
+adapters = [
+    {name = "QQ", module_name = "nonebot.adapters.qq"}
+]
+plugins = ["nonebot_plugin_htmlrender"]
+plugin_dirs = ["src/plugins"]
