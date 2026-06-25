@@ -1,135 +1,69 @@
 import sqlite3
 import os
-from .common import *
+import logging
+from contextlib import closing
+from .common import gsz_userdata_file
+
+logger = logging.getLogger("gsz_assist")
+
 
 class Userdata_manager():
-    __db_path = gsz_userdata_file
-    __userdata_format = {
-        "uid": "TEXT PRIMARY KEY", 
-        "username": "TEXT"
-        }
+    _db_path = gsz_userdata_file
+    _DDL = "CREATE TABLE IF NOT EXISTS userdata(uid TEXT PRIMARY KEY, username TEXT)"
+    _UPSERT = ("INSERT INTO userdata(uid, username) VALUES(?, ?) "
+               "ON CONFLICT(uid) DO UPDATE SET username=excluded.username")
+
     def __init__(self) -> None:
-        pass
+        self._initialized = False
 
-    def __check_userdata(self) -> bool:
-        if not self.__ifexist_userdata_table():
-            return self.__init_userdata()
-        return True
-    
-    def __ifexist_userdata_table(self) -> bool:
-        try:
-            db_connection = sqlite3.connect(self.__db_path)
-        except:
-            return False
-        db_cursor = db_connection.cursor()
-        db_cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'userdata'")
-        result = db_cursor.fetchall()[0][0]
-        db_cursor.close()
-        db_connection.close()
-        if result > 0:
-            return True
-        else:
-            return False
+    def _connect(self) -> sqlite3.Connection:
+        os.makedirs(os.path.dirname(self._db_path), exist_ok=True)
+        db_connection = sqlite3.connect(self._db_path, timeout=30)
+        db_connection.execute("PRAGMA journal_mode=WAL")
+        db_connection.execute("PRAGMA busy_timeout=30000")
+        return db_connection
 
-    def __init_userdata(self) -> bool:
-        try:
-            db_connection = sqlite3.connect(self.__db_path)
-        except:
-            return False
-        db_cursor = db_connection.cursor()
-        db_cursor.execute("CREATE TABLE IF NOT EXISTS userdata(uid TEXT PRIMARY KEY, username TEXT)")
-        db_connection.commit()
-        db_cursor.close()
-        db_connection.close()
-        return True
-    
-    def __insert_userdata(self, userdata_list: list) -> bool:
-        if self.__check_userdata():
-            try:
-                db_connection = sqlite3.connect(self.__db_path)
-            except:
-                return False
+    def _ensure_initialized(self) -> None:
+        if self._initialized:
+            return
+        with closing(self._connect()) as db_connection, db_connection:
+            db_connection.execute(self._DDL)
+        self._initialized = True
+
+    def get_userdata(self, uid_list: list | None = None) -> list:
+        self._ensure_initialized()
+        uids = uid_list if uid_list else []
+        with closing(self._connect()) as db_connection, db_connection:
             db_cursor = db_connection.cursor()
-            for userdata in userdata_list:
-                db_cursor.execute("INSERT INTO userdata(uid, username) VALUES (?, ?)",
-                                (userdata["uid"], userdata["username"]))
-            db_connection.commit()
-            db_cursor.close()
-            db_connection.close()
-            return True
-        return False
-
-    def get_userdata(self, uid_list: list = []) -> list:
-        userdata_list = []
-        if self.__check_userdata():
-            try:
-                db_connection = sqlite3.connect(self.__db_path)
-            except:
-                return False
-            db_cursor = db_connection.cursor()
-            if uid_list == []:
-                db_cursor.execute("SELECT * FROM userdata")
-                result = db_cursor.fetchall()
+            if not uids:
+                db_cursor.execute("SELECT uid, username FROM userdata")
             else:
-                placeholders = ','.join('?' * len(uid_list))
-                db_cursor.execute(f"SELECT * FROM userdata WHERE uid IN ({placeholders})", uid_list)
-                result = db_cursor.fetchall()
-            for row in result:
-                userdata = {
-                    "uid": row[0],
-                    "username": row[1]
-                    }
-                userdata_list.append(userdata)
-            db_cursor.close()
-            db_connection.close()
-        return userdata_list
-    
+                placeholders = ",".join("?" * len(uids))
+                db_cursor.execute(f"SELECT uid, username FROM userdata WHERE uid IN ({placeholders})", uids)
+            result = db_cursor.fetchall()
+        return [{"uid": row[0], "username": row[1]} for row in result]
+
     def ifexist_userdata(self, uid: str) -> bool:
-        if self.__check_userdata():
-            try:
-                db_connection = sqlite3.connect(self.__db_path)
-            except:
-                return False
+        self._ensure_initialized()
+        with closing(self._connect()) as db_connection, db_connection:
             db_cursor = db_connection.cursor()
-            db_cursor.execute("SELECT COUNT(*) FROM userdata WHERE uid = ?", (uid,))
-            result = db_cursor.fetchall()[0][0]
-            if result > 0:
-                return True
-            else:
-                return False
-        return False
+            db_cursor.execute("SELECT 1 FROM userdata WHERE uid = ? LIMIT 1", (uid,))
+            return db_cursor.fetchone() is not None
 
     def update_userdata(self, userdata_list: list) -> bool:
-        if self.__check_userdata():
-            try:
-                db_connection = sqlite3.connect(self.__db_path)
-            except:
-                return False
+        self._ensure_initialized()
+        with closing(self._connect()) as db_connection, db_connection:
             db_cursor = db_connection.cursor()
             for userdata in userdata_list:
-                if self.ifexist_userdata(userdata["uid"]):
-                    db_cursor.execute("UPDATE userdata SET username = ? WHERE uid = ?",
-                                    (userdata["username"], userdata["uid"]))
-                else:
-                    self.__insert_userdata([userdata])
-            db_connection.commit()
-            db_cursor.close()
-            db_connection.close()
-            return True
-        return False
+                db_cursor.execute(self._UPSERT, (userdata["uid"], userdata["username"]))
+        return True
 
     def delete_userdata(self, uid_list: list) -> bool:
-        if self.__check_userdata():
-            try:
-                db_connection = sqlite3.connect(self.__db_path)
-            except:
-                return False
-            db_cursor = db_connection.cursor()
-            placeholders = ','.join('?' * len(uid_list))
-            db_cursor.execute(f"DELETE FROM userdata WHERE uid IN ({placeholders})", uid_list)
-            db_connection.commit()
-            db_cursor.close()
-            db_connection.close()
+        self._ensure_initialized()
+        if not uid_list:
             return True
-        return False
-
+        with closing(self._connect()) as db_connection, db_connection:
+            db_cursor = db_connection.cursor()
+            placeholders = ",".join("?" * len(uid_list))
+            db_cursor.execute(f"DELETE FROM userdata WHERE uid IN ({placeholders})", uid_list)
+        return True

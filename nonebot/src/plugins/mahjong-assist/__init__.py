@@ -73,7 +73,7 @@ async def get_tenhou_paili_handler(args: Annotated[Message, CommandArg()]):
     if not mahjong_analyzer.is_valid_handstr(hand_str):
         await get_tenhou_paili.finish("手牌不符合规则，请修改后重新发送", at_sender=True)
         
-    pic = MahjongService.tenhou_paili_analyse(hand_str, mode)
+    pic = await MahjongService.tenhou_paili_analyse(hand_str, mode)
     message = MessageSegment.file_image(data=pic)
         
     await get_tenhou_paili.finish(message=message, at_sender=True) 
@@ -107,7 +107,7 @@ async def mahjong_ocr_start(args: Annotated[Message, CommandArg()], state: T_Sta
     if len(arg_list) > 0 and "一般" in arg_list[0]:
         mode = 1
 
-    pic = MahjongService.tenhou_paili_analyse(hand, mode)
+    pic = await MahjongService.tenhou_paili_analyse(hand, mode)
     message = MessageSegment.file_image(data=pic)
     
     await get_mahjong_ocr.finish(message=message, at_sender=True)
