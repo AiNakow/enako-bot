@@ -1,7 +1,8 @@
 from nonebot import get_plugin_config
+from nonebot.rule import to_me
 from nonebot.plugin import PluginMetadata
 from nonebot.permission import SUPERUSER
-from nonebot import on_command, require
+from nonebot import on_command, require, on_fullmatch
 from nonebot.adapters import Message
 from nonebot.params import CommandArg
 from nonebot.params import Depends
@@ -19,8 +20,7 @@ from .service import MahjongService
 from . import mahjong_analyzer
 import os
 
-__usage_help__ = """
-/日麻小助手
+__usage_help__ = """日麻小助手
 请按照如下格式发送指令：
 /面麻计分器
 /牌理 <标准形/一般形> <天凤格式手牌>
@@ -43,39 +43,25 @@ if not os.path.exists(model_dir):
 if not os.path.exists(data_dir):
     os.mkdir(data_dir)
 
-get_help = on_command("日麻小助手", priority=10, block=True)
-get_mahjong_helper = on_command("面麻计分器", priority=10, block=True)
-get_tenhou_paili = on_command("牌理", aliases={"天凤牌理"}, priority=10, block=True)
-get_mahjong_ocr = on_command("识图牌理", priority=10, block=True)
+get_help = on_fullmatch("日麻小助手", priority=10, block=True)
+get_mahjong_helper = on_command("面麻计分器", rule=to_me(), priority=10, block=True)
+get_tenhou_paili = on_command("牌理", rule=to_me(), aliases={"天凤牌理"}, priority=10, block=True)
+get_mahjong_ocr = on_command("识图牌理", rule=to_me(), priority=10, block=True)
 
 @get_help.handle()
 async def get_help_handler():
-    try:
-        await get_help.finish(__usage_help__, at_sender=True)
-    except MatcherException:
-        raise
-    except Exception as e:
-        pass 
+    await get_help.finish(__usage_help__, at_sender=True)
 
 @get_mahjong_helper.handle()
 async def get_mahjong_helper_handler():
-    try:
-        await get_mahjong_helper.finish("https://dev-soragoto.github.io/mahjong_helper", at_sender=True)
-    except MatcherException:
-        raise
-    except Exception as e:
-        pass 
+    await get_mahjong_helper.finish("https://dev-soragoto.github.io/mahjong_helper", at_sender=True)
 
 @get_tenhou_paili.handle()
 async def get_tenhou_paili_handler(args: Annotated[Message, CommandArg()]):
     arg_text = args.extract_plain_text()
     if arg_text == "":
-        try:
-            await get_tenhou_paili.finish(__usage_help__, at_sender=True)
-        except MatcherException:
-            raise
-        except Exception as e:
-            pass 
+        await get_tenhou_paili.finish(__usage_help__, at_sender=True)
+
     arg_list = arg_text.split(' ')
     hand_str = arg_list[0]
     mode = 0
@@ -90,13 +76,7 @@ async def get_tenhou_paili_handler(args: Annotated[Message, CommandArg()]):
     pic = MahjongService.tenhou_paili_analyse(hand_str, mode)
     message = MessageSegment.file_image(data=pic)
         
-    # run 1008.js to get result
-    try:
-        await get_tenhou_paili.finish(message=message, at_sender=True)
-    except MatcherException:
-        raise
-    except Exception as e:
-        pass 
+    await get_tenhou_paili.finish(message=message, at_sender=True) 
 
 @get_mahjong_ocr.handle()
 async def mahjong_ocr_start(args: Annotated[Message, CommandArg()], state: T_State):
