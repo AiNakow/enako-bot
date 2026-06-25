@@ -25,7 +25,7 @@ __usage_help__ = """
 /面麻计分器
 /牌理 <标准形/一般形> <天凤格式手牌>
 /牌理 <天凤格式手牌>
-/识图 牌理 <标准形/一般形>
+/识图牌理 <标准形/一般形>
 """
 
 __plugin_meta__ = PluginMetadata(
@@ -46,7 +46,7 @@ if not os.path.exists(data_dir):
 get_help = on_command("日麻小助手", priority=10, block=True)
 get_mahjong_helper = on_command("面麻计分器", priority=10, block=True)
 get_tenhou_paili = on_command("牌理", aliases={"天凤牌理"}, priority=10, block=True)
-get_mahjong_ocr = on_command("识图", priority=10, block=True)
+get_mahjong_ocr = on_command("识图牌理", priority=10, block=True)
 
 @get_help.handle()
 async def get_help_handler():
@@ -102,12 +102,7 @@ async def get_tenhou_paili_handler(args: Annotated[Message, CommandArg()]):
 async def mahjong_ocr_start(args: Annotated[Message, CommandArg()], state: T_State):
     arg_text = args.extract_plain_text().strip()
     arg_list = arg_text.split(' ')
-    if arg_text == "" or len(arg_list) == 0:
-        await get_mahjong_ocr.finish(__usage_help__, at_sender=True)
-    if arg_list[0] == "牌理":
-        await get_mahjong_ocr.send("请发送要识别的图片。为了最佳识别效果，请将图片裁剪至仅有手牌区域。")
-    else: 
-        await get_mahjong_ocr.finish(__usage_help__, at_sender=True)
+    await get_mahjong_ocr.send("请发送要识别的图片。为了最佳识别效果，请将图片裁剪至仅有手牌区域。")
 
     @waiter(waits=["message"], keep_session=True)
     async def get_image(event: MessageEvent):
@@ -127,14 +122,13 @@ async def mahjong_ocr_start(args: Annotated[Message, CommandArg()], state: T_Sta
     url = image_segs[0].data["url"]
     await get_mahjong_ocr.send("推理中...")
 
-    if arg_list[0] == "牌理":
-        hand = MahjongService.get_hand_from_image(url)
-        mode = 0
-        if len(arg_list) > 1 and "一般" in arg_list[1]:
-            mode = 1
+    hand = MahjongService.get_hand_from_image(url)
+    mode = 0
+    if len(arg_list) > 0 and "一般" in arg_list[0]:
+        mode = 1
 
-        pic = MahjongService.tenhou_paili_analyse(hand, mode)
-        message = MessageSegment.file_image(data=pic)
-        
-        await get_mahjong_ocr.finish(message=message, at_sender=True)
+    pic = MahjongService.tenhou_paili_analyse(hand, mode)
+    message = MessageSegment.file_image(data=pic)
+    
+    await get_mahjong_ocr.finish(message=message, at_sender=True)
 

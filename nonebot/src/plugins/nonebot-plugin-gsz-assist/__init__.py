@@ -7,7 +7,7 @@ from nonebot import (
     on_command,
 )
 from nonebot.adapters import Bot, Message
-from nonebot.adapters.qq import Event, MessageSegment
+from nonebot.adapters.qq import Event, MessageSegment, GroupMessageCreateEvent
 from nonebot.exception import MatcherException
 from nonebot.params import CommandArg, Depends
 from nonebot.permission import SUPERUSER
@@ -25,10 +25,13 @@ __usage_help__ = """
 /公式战绑定 <用户名>
 /吃鱼
 /吃鱼 <用户名>
+/吃鱼 @群友
 /仇恨榜
 /仇恨榜 <用户名>
+/仇恨榜 @群友
 /好人榜
 /好人榜 <用户名>
+/好人榜 @群友
 /雀庄绑定 <雀庄名称> （仅限群管理员）
 /排行榜
 """
@@ -47,9 +50,9 @@ if not os.path.exists(data_dir):
 if not os.path.exists(database_dir):
     os.mkdir(database_dir)
 
-def get_at_list(message: Message) -> list[str]:
+def get_at_list(event: Event) -> list[str]:
     """获取消息中所有@的QQ号列表"""
-    return [segment.data["qq"] for segment in message if segment.type == "at"]
+    return [mention_user.id for mention_user in event.mentions]
 
 
 gsz_help = on_command("公式战小助手", priority=10, block=True)
@@ -62,21 +65,14 @@ get_gsz_rank_list = on_command("排行榜", priority=10, block=True)
 
 @gsz_help.handle()
 async def gsz_help_handler(event: Event):
-    try:
-        await gsz_help.finish(__usage_help__, at_sender=True)
-    except MatcherException:
-        raise
-    except Exception as e:
-        pass
+    await gsz_help.finish(__usage_help__, at_sender=True)
 
 @bind_gsz_userinfo.handle()
 async def bind_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event: Event):
     arg_text = args.extract_plain_text()
     if arg_text == "":
-        try:
-            await bind_gsz_userinfo.finish(__usage_help__, at_sender=True)
-        except MatcherException:
-            raise
+        await bind_gsz_userinfo.finish(__usage_help__, at_sender=True)
+
     username = arg_text
     if GszService.bind_userinfo(uid=event.get_user_id(), username=username):
         await bind_gsz_userinfo.finish(f"绑定成功，{username}的公式战信息已绑定到{event.get_user_id()}", at_sender=True)
@@ -85,19 +81,13 @@ async def bind_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], even
 
 @get_gsz_userinfo.handle()
 async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event: Event):
-    if event.get_event_name() == "GROUP_AT_MESSAGE_CREATE" and False:
-        at_list = get_at_list(event.get_message())
-        username = GszService.get_userinfo_by_uid(uid=at_list[0])
+    if isinstance(event, GroupMessageCreateEvent) and len(get_at_list(event)) > 1:
+        at_list = get_at_list(event)
+        username = GszService.get_userinfo_by_uid(uid=at_list[1])
         if username is None:
-            try:
-                await get_gsz_userinfo.finish(f"该用户未绑定公式战信息！", at_sender=True)
-            except MatcherException:
-                raise
-            except Exception as e:
-                pass
-            return
+            await get_gsz_userinfo.finish(f"该用户未绑定公式战信息！", at_sender=True)
     else:
-        arg_text = args.extract_plain_text()
+        arg_text = args.extract_plain_text().strip()
         arg_list = arg_text.split(' ')
         if arg_text == "":
             username = GszService.get_userinfo_by_uid(uid=event.get_user_id())
@@ -140,17 +130,11 @@ async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event
 
 @get_gsz_rank_top.handle()
 async def get_gsz_rank_top_handler(args: Annotated[Message, CommandArg()], event: Event):
-    if event.get_event_name() == "GROUP_AT_MESSAGE_CREATE" and False:
-        at_list = get_at_list(event.get_message())
-        username = GszService.get_userinfo_by_uid(uid=at_list[0])
+    if isinstance(event, GroupMessageCreateEvent) and len(get_at_list(event)) > 1:
+        at_list = get_at_list(event)
+        username = GszService.get_userinfo_by_uid(uid=at_list[1])
         if username is None:
-            try:
-                await get_gsz_rank_top.finish(f"该用户未绑定公式战信息！", at_sender=True)
-            except MatcherException:
-                raise
-            except Exception as e:
-                pass
-            return
+            await get_gsz_userinfo.finish(f"该用户未绑定公式战信息！", at_sender=True)
     else:
         arg_text = args.extract_plain_text()
         arg_list = arg_text.split(' ')
@@ -195,17 +179,11 @@ async def get_gsz_rank_top_handler(args: Annotated[Message, CommandArg()], event
 
 @get_gsz_rank_last.handle()
 async def get_gsz_rank_last_handler(args: Annotated[Message, CommandArg()], event: Event):
-    if event.get_event_name() == "GROUP_AT_MESSAGE_CREATE" and False:
-        at_list = get_at_list(event.message)
-        username = GszService.get_userinfo_by_uid(uid=at_list[0])
+    if isinstance(event, GroupMessageCreateEvent) and len(get_at_list(event)) > 1:
+        at_list = get_at_list(event)
+        username = GszService.get_userinfo_by_uid(uid=at_list[1])
         if username is None:
-            try:
-                await get_gsz_rank_last.finish(f"该用户未绑定公式战信息！", at_sender=True)
-            except MatcherException:
-                raise
-            except Exception as e:
-                pass
-            return
+            await get_gsz_userinfo.finish(f"该用户未绑定公式战信息！", at_sender=True)
     else:
         arg_text = args.extract_plain_text()
         arg_list = arg_text.split(' ')
