@@ -101,6 +101,7 @@ class GszService:
         except sqlite3.Error:
             logger.warning("get_userinfo_by_uid: DB read failed", exc_info=True)
             return None
+        logger.warning(f"[diag] get_userinfo_by_uid uid={uid!r} -> {len(userdata_list)} rows, _initialized={userdata_manager._initialized}")
         if len(userdata_list) == 0:
             return None
         return userdata_list[0]["username"]

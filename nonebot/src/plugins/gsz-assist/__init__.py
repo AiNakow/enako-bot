@@ -87,6 +87,7 @@ async def bind_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], even
 async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event: Event):
     if isinstance(event, GroupMessageCreateEvent) and len(get_at_list(event)) > 1:
         at_list = get_at_list(event)
+        logger.warning(f"[diag] /吃鱼@ mentions={[getattr(m, 'id', None) for m in event.mentions]} at_list={at_list} sender_uid={event.get_user_id()}")
         username = await GszService.get_userinfo_by_uid(uid=at_list[1])
         if username is None:
             await get_gsz_userinfo.finish(f"该用户未绑定公式战信息！", at_sender=True)
