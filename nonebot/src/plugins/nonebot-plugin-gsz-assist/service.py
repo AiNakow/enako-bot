@@ -18,13 +18,16 @@ from .ratedata_manage import Ratedata_manager
 from .template_env import *
 from .userdata_manage import Userdata_manager
 
+API_BASE = 'https://gsz.rmlinking.com/gszapi'
+
 API_ENDPOINTS = {
-        "basic": 'https://gsz.rmlinking.com/gszapi/customer/getCustomerByName',
-        "tech": 'https://gsz.rmlinking.com/gszapi/score/tech',
-        "customerRateList": 'https://gsz.rmlinking.com/gszapi/customer/getCustomerRateList',
-        "hate": 'https://gsz.rmlinking.com/gszapi/score/hate',
-        "rateList": 'https://gsz.rmlinking.com/gszapi/customer/rate/list',
-        "findRanking": 'https://gsz.rmlinking.com/gszapi/customer/findRanking'
+        "basic": API_BASE + '/customer/getCustomerByName',
+        "tech": API_BASE + '/score/tech',
+        "customerRateList": API_BASE + '/customer/getCustomerRateList',
+        "hate": API_BASE + '/score/hate',
+        "rateList": API_BASE + '/customer/rate/list',
+        "findRanking": API_BASE + '/customer/findRanking',
+        "customerRatePage": API_BASE + '/customer/rate/page'
     }
 
 nest_asyncio.apply()
@@ -110,6 +113,9 @@ class GszService:
             rateList_data = httpx.post(API_ENDPOINTS["customerRateList"] + f'?customerId={custom_id}', timeout=timeout_config).json()
             if rateList_data['code'] != 200:
                 raise Exception("获取rateList_data失败")
+            ratePage_data = httpx.post(API_ENDPOINTS["customerRatePage"] + f'?customerId={custom_id}&pageNo=1&pageSize=10', timeout=timeout_config).json()
+            if ratePage_data['code'] != 200:
+                raise Exception("获取ratePage_data失败")
         except httpx.ConnectError as e:
             logger.debug(f"连接失败：{e}")
         except httpx.ReadTimeout as e:
@@ -133,7 +139,8 @@ class GszService:
             userpic=base64.b64encode(raw_pic).decode("utf-8"), 
             basic_data=json.dumps(basic_data["data"]), 
             tech_data=json.dumps(tech_data["data"]), 
-            rateList_data=json.dumps(rateList_data["data"])
+            rateList_data=json.dumps(rateList_data["data"]),
+            ratePage_data=json.dumps(ratePage_data["data"]["records"])
             )
         logger.debug(f"渲染模板内容: {content[:100]}...")  # 仅打印前100个字符以避免过长输出
         pic = asyncio.run(convert_html_to_pic2(content=content))

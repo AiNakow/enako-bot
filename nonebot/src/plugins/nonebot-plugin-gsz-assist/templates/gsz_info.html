@@ -28,6 +28,9 @@
             min-height: 250px;
             width: 100% !important;
         }
+        #rankTrendChart {
+            min-height: 0 !important;
+        }
         .font-mono {
             letter-spacing: -0.05em;
             color: #1e40af;
@@ -123,6 +126,13 @@
         <!-- 顺位数据 -->
         <div class="card bg-base-100 shadow-xl p-4 mb-4">
             <h3 class="text-lg font-bold mb-2 text-center">最近顺位数据（旧 → 新）</h3>
+            <!-- 近十场顺位折线图 -->
+            <div class="mb-4">
+                <h4 class="text-sm font-bold mb-2 text-center text-gray-500">近10场顺位走势</h4>
+                <div style="height: 125px; width: 66.67%; margin: 0 auto;">
+                    <canvas id="rankTrendChart"></canvas>
+                </div>
+            </div>
             <div id="rankGroups" class="flex flex-wrap gap-4 mb-4 justify-center">
                 <!-- 场次分组将通过JavaScript动态添加 -->
             </div>
@@ -196,11 +206,13 @@
             const basicData = JSON.parse('{{ basic_data }}')
             const techData = JSON.parse('{{ tech_data }}')
             const rateListData = JSON.parse('{{ rateList_data }}')
+            const ratePageData = JSON.parse('{{ ratePage_data }}')
 
             return {
                     basicData,
                     techData,
-                    rateListData
+                    rateListData,
+                    ratePageData
                 };
         }
 
@@ -479,6 +491,97 @@
             });
         }
 
+        // 初始化近十场顺位折线图
+        function initRankTrendChart(ratePageData, userName) {
+            const ctx = document.getElementById('rankTrendChart').getContext('2d');
+
+            // 按时间升序排列（旧 → 新）
+            const sortedRecords = (ratePageData || [])
+                .slice()
+                .sort((a, b) => new Date(a.logtime) - new Date(b.logtime));
+
+            // 提取当前用户在每场对局中的顺位（name1=1位 ... name4=4位）
+            const name = (userName || '').trim();
+            const positions = sortedRecords.map(record => {
+                if ((record.name1 || '').trim() === name) return 1;
+                if ((record.name2 || '').trim() === name) return 2;
+                if ((record.name3 || '').trim() === name) return 3;
+                if ((record.name4 || '').trim() === name) return 4;
+                return null;
+            });
+
+            const labels = sortedRecords.map((_, index) => `第${index + 1}场`);
+
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '顺位',
+                        data: positions,
+                        borderColor: 'rgba(30, 64, 175, 0.9)',
+                        backgroundColor: 'rgba(30, 64, 175, 0.08)',
+                        borderWidth: 2,
+                        fill: true,
+                        spanGaps: true,
+                        clip: false,
+                        pointBackgroundColor: positions.map(p => ({
+                            1: 'rgb(59, 130, 246)',
+                            2: 'rgb(163, 230, 53)',
+                            3: 'rgb(250, 204, 21)',
+                            4: 'rgb(248, 113, 113)'
+                        }[p] || 'rgba(30, 64, 175, 1)')),
+                        pointBorderColor: 'white',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    animation: false,
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { top: 8, bottom: 8 }
+                    },
+                    scales: {
+                        y: {
+                            reverse: true,
+                            min: 1,
+                            max: 4,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return value + '位';
+                                },
+                                font: { size: 12 }
+                            },
+                            grid: { color: 'rgba(30, 64, 175, 0.1)' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const idx = context.dataIndex;
+                                    const pos = context.parsed.y;
+                                    const record = sortedRecords[idx];
+                                    const time = (record.logtime || '').replace('T', ' ').slice(5);
+                                    const point = record ? record['point' + pos] : '';
+                                    return `${pos}位 · ${point}点（${time}）`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         // 更新顺位数据
         function updateRankHistory(rateListData, basicData) {
             const rankGroupsElement = document.getElementById('rankGroups');
@@ -537,6 +640,7 @@
                 updatePlayerInfo(data.basicData, data.rateListData);
                 initRadarChart(data.techData);
                 initDoughnutChart(data.techData);
+                initRankTrendChart(data.ratePageData, data.basicData.name);
                 updateRankHistory(data.rateListData, data.basicData);
             } catch (error) {
                 console.error('初始化失败:', error);
