@@ -166,7 +166,7 @@
         };
 
         // 数据获取函数
-        function fetchData(playerName = '{{ username }}') {
+        function fetchData(playerName = {{ username | tojson }}) {
             /*
             try {
                 // 获取基本信息
@@ -203,10 +203,10 @@
             }
             */
 
-            const basicData = JSON.parse('{{ basic_data }}')
-            const techData = JSON.parse('{{ tech_data }}')
-            const rateListData = JSON.parse('{{ rateList_data }}')
-            const ratePageData = JSON.parse('{{ ratePage_data }}')
+            const basicData = {{ basic_data | tojson }};
+            const techData = {{ tech_data | tojson }};
+            const rateListData = {{ rateList_data | tojson }};
+            const ratePageData = {{ ratePage_data | tojson }};
 
             return {
                     basicData,
