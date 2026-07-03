@@ -80,7 +80,7 @@ async def bind_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], even
         except MatcherException:
             raise
     username = arg_text
-    if GszService.bind_userinfo(uid=event.get_user_id(), username=username):
+    if await GszService.bind_userinfo(uid=event.get_user_id(), username=username):
         await bind_gsz_userinfo.finish(f"绑定成功，{username}的公式战信息已绑定到{event.get_user_id()}", at_sender=True)
     else:
         await bind_gsz_userinfo.finish(f"绑定失败，用户名可能不存在，请检查是否输入有误（不要加示例中的尖括号）", at_sender=True)
@@ -89,7 +89,7 @@ async def bind_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], even
 async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event: Event):
     if event.message_type == "group" and get_at_list(event.message) != []:
         at_list = get_at_list(event.message)
-        username = GszService.get_userinfo_by_uid(uid=at_list[0])
+        username = await GszService.get_userinfo_by_uid(uid=at_list[0])
         if username is None:
             try:
                 await get_gsz_userinfo.finish(f"该用户未绑定公式战信息！", at_sender=True)
@@ -102,7 +102,7 @@ async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event
         arg_text = args.extract_plain_text()
         arg_list = arg_text.split(' ')
         if arg_text == "":
-            username = GszService.get_userinfo_by_uid(uid=event.get_user_id())
+            username = await GszService.get_userinfo_by_uid(uid=event.get_user_id())
             if username is None:
                 try:
                     await get_gsz_userinfo.finish(f"未绑定公式战信息，请使用\n/公式战绑定 <用户名>\n绑定公式战信息", at_sender=True)
@@ -121,7 +121,7 @@ async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event
         pass
 
     try:
-        pic = GszService.get_userinfo_by_name(username)
+        pic = await GszService.get_userinfo_by_name(username)
     except Exception as e:
         try:
             await get_gsz_userinfo.finish(f"获取{username}的公式战信息失败，请检查是否输入有误", at_sender=True)
@@ -144,7 +144,7 @@ async def get_gsz_userinfo_handler(args: Annotated[Message, CommandArg()], event
 async def get_gsz_rank_top_handler(args: Annotated[Message, CommandArg()], event: Event):
     if event.message_type == "group" and get_at_list(event.message) != []:
         at_list = get_at_list(event.message)
-        username = GszService.get_userinfo_by_uid(uid=at_list[0])
+        username = await GszService.get_userinfo_by_uid(uid=at_list[0])
         if username is None:
             try:
                 await get_gsz_rank_top.finish(f"该用户未绑定公式战信息！", at_sender=True)
@@ -157,7 +157,7 @@ async def get_gsz_rank_top_handler(args: Annotated[Message, CommandArg()], event
         arg_text = args.extract_plain_text()
         arg_list = arg_text.split(' ')
         if arg_text == "":
-            username = GszService.get_userinfo_by_uid(uid=event.get_user_id())
+            username = await GszService.get_userinfo_by_uid(uid=event.get_user_id())
             if username is None:
                 try:
                     await get_gsz_rank_top.finish(f"未绑定公式战信息，请使用\n/公式战绑定 <用户名>\n绑定公式战信息", at_sender=True)
@@ -176,7 +176,7 @@ async def get_gsz_rank_top_handler(args: Annotated[Message, CommandArg()], event
         pass
 
     try:
-        pic = GszService.get_rank_top(username)
+        pic = await GszService.get_rank_top(username)
     except Exception as e:
         try:
             await get_gsz_rank_top.finish(f"获取{username}的仇恨榜失败，请检查是否输入有误", at_sender=True)
@@ -199,7 +199,7 @@ async def get_gsz_rank_top_handler(args: Annotated[Message, CommandArg()], event
 async def get_gsz_rank_last_handler(args: Annotated[Message, CommandArg()], event: Event):
     if event.message_type == "group" and get_at_list(event.message) != []:
         at_list = get_at_list(event.message)
-        username = GszService.get_userinfo_by_uid(uid=at_list[0])
+        username = await GszService.get_userinfo_by_uid(uid=at_list[0])
         if username is None:
             try:
                 await get_gsz_rank_last.finish(f"该用户未绑定公式战信息！", at_sender=True)
@@ -212,7 +212,7 @@ async def get_gsz_rank_last_handler(args: Annotated[Message, CommandArg()], even
         arg_text = args.extract_plain_text()
         arg_list = arg_text.split(' ')
         if arg_text == "":
-            username = GszService.get_userinfo_by_uid(uid=event.get_user_id())
+            username = await GszService.get_userinfo_by_uid(uid=event.get_user_id())
             if username is None:
                 try:
                     await get_gsz_rank_last.finish(f"未绑定公式战信息，请使用\n/公式战绑定 <用户名>\n绑定公式战信息", at_sender=True)
@@ -231,7 +231,7 @@ async def get_gsz_rank_last_handler(args: Annotated[Message, CommandArg()], even
         pass
 
     try:
-        pic = GszService.get_rank_last(username)
+        pic = await GszService.get_rank_last(username)
     except Exception as e:
         try:
             await get_gsz_rank_last.finish(f"获取{username}的好人榜失败，请检查是否输入有误", at_sender=True)
@@ -265,7 +265,7 @@ async def bind_gsz_rateinfo_handler(args: Annotated[Message, CommandArg()], even
         return
     
     rate_name = arg_text.split(' ')[0]
-    if GszService.bind_rateinfo(group_id=event.group_id, rate_name=rate_name):
+    if await GszService.bind_rateinfo(group_id=event.group_id, rate_name=rate_name):
         try:
             await bind_gsz_rateinfo.finish(f"绑定成功，{rate_name}的雀庄信息已绑定到{event.group_id}", at_sender=True)
         except MatcherException:
@@ -284,7 +284,7 @@ async def bind_gsz_rateinfo_handler(args: Annotated[Message, CommandArg()], even
 async def get_gsz_rank_list_handler(event: GroupMessageEvent):
     if event.message_type != "group":
         return
-    rateinfo = GszService.get_rateinfo_by_group_id(group_id=event.group_id)
+    rateinfo = await GszService.get_rateinfo_by_group_id(group_id=event.group_id)
 
     if rateinfo is None:
         try:
@@ -305,7 +305,7 @@ async def get_gsz_rank_list_handler(event: GroupMessageEvent):
         pass
 
     try:
-        pic = GszService.get_rank_list(rate_id=rate_id)
+        pic = await GszService.get_rank_list(rate_id=rate_id)
     except Exception as e:
         try:
             await get_gsz_rank_list.finish(f"获取排行榜失败，可能是网络波动，请稍后再试", at_sender=True)

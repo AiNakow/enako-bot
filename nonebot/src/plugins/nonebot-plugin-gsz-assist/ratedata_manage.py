@@ -1,5 +1,4 @@
 import sqlite3
-import os
 from .common import *
 
 class Ratedata_manager():
@@ -20,7 +19,7 @@ class Ratedata_manager():
     def __ifexist_ratedata_table(self) -> bool:
         try:
             db_connection = sqlite3.connect(self.__db_path)
-        except:
+        except Exception:
             return False
         db_cursor = db_connection.cursor()
         db_cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'ratedata'")
@@ -35,7 +34,7 @@ class Ratedata_manager():
     def __init_ratedata(self) -> bool:
         try:
             db_connection = sqlite3.connect(self.__db_path)
-        except:
+        except Exception:
             return False
         db_cursor = db_connection.cursor()
         db_cursor.execute("CREATE TABLE IF NOT EXISTS ratedata(groupId TEXT PRIMARY KEY, rateId INT, rateName TEXT)")
@@ -48,7 +47,7 @@ class Ratedata_manager():
         if self.__check_ratedata():
             try:
                 db_connection = sqlite3.connect(self.__db_path)
-            except:
+            except Exception:
                 return False
             db_cursor = db_connection.cursor()
             for ratedata in ratedata_list:
@@ -60,15 +59,15 @@ class Ratedata_manager():
             return True
         return False
 
-    def get_ratedata(self, groupId_list: list = []) -> list:
+    def get_ratedata(self, groupId_list: list | None = None) -> list:
         ratedata_list = []
         if self.__check_ratedata():
             try:
                 db_connection = sqlite3.connect(self.__db_path)
-            except:
-                return False
+            except Exception:
+                return []
             db_cursor = db_connection.cursor()
-            if groupId_list == []:
+            if not groupId_list:
                 db_cursor.execute("SELECT * FROM ratedata")
                 result = db_cursor.fetchall()
             else:
@@ -90,7 +89,7 @@ class Ratedata_manager():
         if self.__check_ratedata():
             try:
                 db_connection = sqlite3.connect(self.__db_path)
-            except:
+            except Exception:
                 return False
             db_cursor = db_connection.cursor()
             db_cursor.execute("SELECT COUNT(*) FROM ratedata WHERE groupId = ?", (groupId,))
@@ -105,7 +104,7 @@ class Ratedata_manager():
         if self.__check_ratedata():
             try:
                 db_connection = sqlite3.connect(self.__db_path)
-            except:
+            except Exception:
                 return False
             db_cursor = db_connection.cursor()
             for ratedata in ratedata_list:
@@ -124,7 +123,7 @@ class Ratedata_manager():
         if self.__check_ratedata():
             try:
                 db_connection = sqlite3.connect(self.__db_path)
-            except:
+            except Exception:
                 return False
             db_cursor = db_connection.cursor()
             placeholders = ','.join('?' * len(groupId_list))
@@ -134,4 +133,3 @@ class Ratedata_manager():
             db_connection.close()
             return True
         return False
-

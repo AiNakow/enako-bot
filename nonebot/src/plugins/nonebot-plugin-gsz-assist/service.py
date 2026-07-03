@@ -9,7 +9,6 @@ from io import BytesIO
 # 第三方库
 from nonebot_plugin_htmlrender import html_to_pic
 from nonebot.log import logger
-from PIL import Image
 
 # 本地模块
 from .common import *
@@ -29,13 +28,29 @@ API_ENDPOINTS = {
         "customerRatePage": API_BASE + '/customer/rate/page'
     }
 
+_TIMEOUT = httpx.Timeout(30.0, connect=15.0, read=15.0)
+
+
+async def _post_json(url: str) -> dict:
+    async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+        resp = await client.post(url)
+        return resp.json()
+
+
+async def _get_bytes(url: str) -> bytes:
+    async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
+        resp = await client.get(url)
+        return resp.content
+
+
 async def convert_html_to_pic(content: str) -> BytesIO:
     try:
-        result = await html_to_pic(html=content, type="jpeg", quality=70, device_scale_factor=2, wait=1000) 
+        result = await html_to_pic(html=content, type="jpeg", quality=70, device_scale_factor=2, wait=1000)
     except Exception as e:
         logger.debug(e)
-        raise e
+        raise
     return result
+
 
 async def convert_html_to_pic2(content: str) -> BytesIO:
     return await html_to_pic(
@@ -46,15 +61,15 @@ async def convert_html_to_pic2(content: str) -> BytesIO:
         wait=1000,
     )
 
+
 class GszService:
     userdata_manager = Userdata_manager()
     ratedata_manager = Ratedata_manager()
 
     @staticmethod
-    def exist_gsz_user(username: str) -> bool:
-        timeout_config = httpx.Timeout(30.0, connect=15.0, read=15.0)
+    async def exist_gsz_user(username: str) -> bool:
         try:
-            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}&mobile=', timeout=timeout_config).json()
+            basic_data = await _post_json(API_ENDPOINTS["basic"] + f'?name={username}&mobile=')
             if basic_data['code'] != 200:
                 raise Exception("获取basic_data失败")
         except httpx.ConnectError as e:
@@ -76,10 +91,10 @@ class GszService:
         if basic_data['data'] == "":
             return False
         return True
-    
+
     @staticmethod
     async def bind_userinfo(uid: str, username: str) -> bool:
-        if not GszService.exist_gsz_user(username):
+        if not await GszService.exist_gsz_user(username):
             return False
         userdata_manager = GszService.userdata_manager
         try:
@@ -100,7 +115,6 @@ class GszService:
         except sqlite3.Error:
             logger.warning("get_userinfo_by_uid: DB read failed", exc_info=True)
             return None
-        logger.warning(f"[diag] get_userinfo_by_uid uid={uid!r} -> {len(userdata_list)} rows, _initialized={userdata_manager._initialized}")
         if len(userdata_list) == 0:
             return None
         return userdata_list[0]["username"]
@@ -108,70 +122,72 @@ class GszService:
     @staticmethod
     async def get_userinfo_by_name(username: str) -> BytesIO:
         logger.debug(f"开始获取用户信息: {username}")
-        timeout_config = httpx.Timeout(30.0, connect=15.0, read=15.0)
-        logger.debug(f"设置请求超时时间: {timeout_config}")
         try:
-            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}&mobile=', timeout=timeout_config).json()
+            basic_data = await _post_json(API_ENDPOINTS["basic"] + f'?name={username}&mobile=')
             if basic_data['code'] != 200:
                 raise Exception("获取basic_data失败")
-            custom_id= basic_data['data']['id']
+            custom_id = basic_data['data']['id']
             qq = basic_data['data']['qq']
-            tech_data = httpx.post(API_ENDPOINTS["tech"] + f'?customerId={custom_id}', timeout=timeout_config).json()
+            tech_data = await _post_json(API_ENDPOINTS["tech"] + f'?customerId={custom_id}')
             if tech_data['code'] != 200:
                 raise Exception("获取tech_data失败")
-            rateList_data = httpx.post(API_ENDPOINTS["customerRateList"] + f'?customerId={custom_id}', timeout=timeout_config).json()
+            rateList_data = await _post_json(API_ENDPOINTS["customerRateList"] + f'?customerId={custom_id}')
             if rateList_data['code'] != 200:
                 raise Exception("获取rateList_data失败")
-            ratePage_data = httpx.post(API_ENDPOINTS["customerRatePage"] + f'?customerId={custom_id}&pageNo=1&pageSize=10', timeout=timeout_config).json()
+            ratePage_data = await _post_json(API_ENDPOINTS["customerRatePage"] + f'?customerId={custom_id}&pageNo=1&pageSize=10')
             if ratePage_data['code'] != 200:
                 raise Exception("获取ratePage_data失败")
         except httpx.ConnectError as e:
             logger.debug(f"连接失败：{e}")
+            raise
         except httpx.ReadTimeout as e:
             logger.debug(f"读取超时：{e}")
+            raise
         except httpx.HTTPStatusError as e:
             logger.debug(f"响应状态码错误: {e.response.status_code}")
+            raise
         except httpx.RequestError as e:
             logger.debug(f"请求失败：{e}")
+            raise
         except Exception as e:
             logger.debug(f"其他错误：{e}")
+            raise
 
         logger.debug(f"获取用户信息: {username}({qq})")
-        raw_pic = httpx.get(f'https://q.qlogo.cn/headimg_dl?dst_uin={qq}&spec=640&img_type=jpg').content
+        raw_pic = await _get_bytes(f'https://q.qlogo.cn/headimg_dl?dst_uin={qq}&spec=640&img_type=jpg')
 
         template = jinja_env.get_template('gsz_info.html')
         content = template.render(
             tailwind_js=os.path.join(template_dir, 'tailwind.js'),
             daisyui_css=os.path.join(template_dir, 'daisyui.css'),
             chart_js=os.path.join(template_dir, 'chart.js'),
-            username=username, 
-            userpic=base64.b64encode(raw_pic).decode("utf-8"), 
-            basic_data=basic_data["data"], 
-            tech_data=tech_data["data"], 
+            username=username,
+            userpic=base64.b64encode(raw_pic).decode("utf-8"),
+            basic_data=basic_data["data"],
+            tech_data=tech_data["data"],
             rateList_data=rateList_data["data"],
             ratePage_data=ratePage_data["data"]["records"]
             )
         logger.debug(f"渲染模板内容: {content[:100]}...")  # 仅打印前100个字符以避免过长输出
         pic = await convert_html_to_pic2(content=content)
         logger.debug(f"获取用户信息图片: {username}({qq})")
-        
+
         return pic
 
     @staticmethod
     async def get_rank_top(username: str) -> BytesIO:
-        timeout_config = httpx.Timeout(30.0, connect=15.0, read=15.0)
         try:
-            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}', timeout=timeout_config).json()
+            basic_data = await _post_json(API_ENDPOINTS["basic"] + f'?name={username}')
             if basic_data['code'] != 200:
                 raise Exception("获取basic_data失败")
-            custom_id= basic_data['data']['id']
-            hate_data_top = httpx.post(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo=1&pageSize=10', timeout=timeout_config).json()
+            custom_id = basic_data['data']['id']
+            hate_data_top = await _post_json(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo=1&pageSize=10')
             if hate_data_top['code'] != 200:
                 raise Exception("获取hate_data_top失败")
         except Exception as e:
-            print(e)
-            raise e
-        
+            logger.debug(e)
+            raise
+
         template = jinja_env.get_template('hate.html')
         content = template.render(
             tailwind_js=os.path.join(template_dir, 'tailwind.js'),
@@ -186,21 +202,20 @@ class GszService:
 
     @staticmethod
     async def get_rank_last(username: str) -> BytesIO:
-        timeout_config = httpx.Timeout(30.0, connect=15.0, read=15.0)
         try:
-            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}', timeout=timeout_config).json()
+            basic_data = await _post_json(API_ENDPOINTS["basic"] + f'?name={username}')
             if basic_data['code'] != 200:
                 raise Exception("获取basic_data失败")
-            custom_id= basic_data['data']['id']
-            hate_data= httpx.post(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo=1&pageSize=10', timeout=timeout_config).json()
+            custom_id = basic_data['data']['id']
+            hate_data = await _post_json(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo=1&pageSize=10')
             if hate_data['code'] != 200:
                 raise Exception("获取hate_data失败")
             pageNo = hate_data["data"]["pages"]
-            hate_data = httpx.post(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo={pageNo}&pageSize=10', timeout=timeout_config).json()
+            hate_data = await _post_json(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo={pageNo}&pageSize=10')
             if hate_data['code'] != 200:
                 raise Exception("获取hate_data_last_page失败")
             hate_data_last = hate_data["data"]["records"]
-            hate_data = httpx.post(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo={pageNo-1}&pageSize=10', timeout=timeout_config).json()
+            hate_data = await _post_json(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo={pageNo-1}&pageSize=10')
             if hate_data['code'] != 200:
                 raise Exception("获取hate_data_last_page-1失败")
             hate_data_last = hate_data["data"]["records"] + hate_data_last
@@ -211,9 +226,9 @@ class GszService:
             hate_data_last = sorted(hate_data_last, key=lambda x: x["hatred"], reverse=True)
 
         except Exception as e:
-            print(e)
-            raise e
-        
+            logger.debug(e)
+            raise
+
         template = jinja_env.get_template('hate.html')
         content = template.render(
             tailwind_js=os.path.join(template_dir, 'tailwind.js'),
@@ -225,26 +240,25 @@ class GszService:
         pic = await convert_html_to_pic(content=content)
 
         return pic
-    
+
     @staticmethod
-    def get_rate_id(rate_name: str) -> str | None:
-        timeout_config = httpx.Timeout(30.0, connect=15.0, read=15.0)
+    async def get_rate_id(rate_name: str) -> str | None:
         try:
-            rate_data = httpx.post(API_ENDPOINTS["rateList"] + f'?&pageNo=1&pageSize=9&name={rate_name}&areaName=&province=&city=', timeout=timeout_config).json()
+            rate_data = await _post_json(API_ENDPOINTS["rateList"] + f'?&pageNo=1&pageSize=9&name={rate_name}&areaName=&province=&city=')
             if rate_data['code'] != 200:
                 raise Exception("获取rate_data失败")
         except Exception as e:
-            print(e)
+            logger.debug(e)
             return None
-        
+
         if len(rate_data["data"]["records"]) == 0:
             return None
         return rate_data["data"]["records"][0]["id"]
-    
+
     @staticmethod
-    def exist_rate(rate_name: str) -> bool:
-        return GszService.get_rate_id(rate_name) is not None
-        
+    async def exist_rate(rate_name: str) -> bool:
+        return await GszService.get_rate_id(rate_name) is not None
+
     @staticmethod
     async def get_rateinfo_by_group_id(group_id: str) -> object | None:
         ratedata_manager = GszService.ratedata_manager
@@ -259,10 +273,10 @@ class GszService:
 
     @staticmethod
     async def bind_rateinfo(group_id: str, rate_name: str) -> bool:
-        if not GszService.exist_rate(rate_name):
+        if not await GszService.exist_rate(rate_name):
             return False
         ratedata_manager = GszService.ratedata_manager
-        rate_id = GszService.get_rate_id(rate_name)
+        rate_id = await GszService.get_rate_id(rate_name)
         if rate_id is None:
             return False
         try:
@@ -274,18 +288,17 @@ class GszService:
             logger.warning("bind_rateinfo: DB update failed", exc_info=True)
             return False
         return True
-    
+
     @staticmethod
     async def get_rank_list(rate_id: str) -> BytesIO:
-        timeout_config = httpx.Timeout(30.0, connect=15.0, read=15.0)
         try:
-            rank_data = httpx.post(API_ENDPOINTS["findRanking"] + f'?pageNo=1&pageSize=50&pid={rate_id}&sortField=rank&sortType=desc', timeout=timeout_config).json()
+            rank_data = await _post_json(API_ENDPOINTS["findRanking"] + f'?pageNo=1&pageSize=50&pid={rate_id}&sortField=rank&sortType=desc')
             if rank_data['code'] != 200:
                 raise Exception("获取rank_data失败")
         except Exception as e:
-            print(e)
-            raise e
-        
+            logger.debug(e)
+            raise
+
         rank_data = rank_data["data"]["records"]
 
         template = jinja_env.get_template('rank_list.html')

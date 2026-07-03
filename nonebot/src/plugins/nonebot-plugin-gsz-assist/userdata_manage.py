@@ -1,5 +1,4 @@
 import sqlite3
-import os
 from .common import *
 
 class Userdata_manager():
@@ -19,7 +18,7 @@ class Userdata_manager():
     def __ifexist_userdata_table(self) -> bool:
         try:
             db_connection = sqlite3.connect(self.__db_path)
-        except:
+        except Exception:
             return False
         db_cursor = db_connection.cursor()
         db_cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'userdata'")
@@ -34,7 +33,7 @@ class Userdata_manager():
     def __init_userdata(self) -> bool:
         try:
             db_connection = sqlite3.connect(self.__db_path)
-        except:
+        except Exception:
             return False
         db_cursor = db_connection.cursor()
         db_cursor.execute("CREATE TABLE IF NOT EXISTS userdata(uid TEXT PRIMARY KEY, username TEXT)")
@@ -47,7 +46,7 @@ class Userdata_manager():
         if self.__check_userdata():
             try:
                 db_connection = sqlite3.connect(self.__db_path)
-            except:
+            except Exception:
                 return False
             db_cursor = db_connection.cursor()
             for userdata in userdata_list:
@@ -59,15 +58,15 @@ class Userdata_manager():
             return True
         return False
 
-    def get_userdata(self, uid_list: list = []) -> list:
+    def get_userdata(self, uid_list: list | None = None) -> list:
         userdata_list = []
         if self.__check_userdata():
             try:
                 db_connection = sqlite3.connect(self.__db_path)
-            except:
-                return False
+            except Exception:
+                return []
             db_cursor = db_connection.cursor()
-            if uid_list == []:
+            if not uid_list:
                 db_cursor.execute("SELECT * FROM userdata")
                 result = db_cursor.fetchall()
             else:
@@ -88,7 +87,7 @@ class Userdata_manager():
         if self.__check_userdata():
             try:
                 db_connection = sqlite3.connect(self.__db_path)
-            except:
+            except Exception:
                 return False
             db_cursor = db_connection.cursor()
             db_cursor.execute("SELECT COUNT(*) FROM userdata WHERE uid = ?", (uid,))
@@ -103,7 +102,7 @@ class Userdata_manager():
         if self.__check_userdata():
             try:
                 db_connection = sqlite3.connect(self.__db_path)
-            except:
+            except Exception:
                 return False
             db_cursor = db_connection.cursor()
             for userdata in userdata_list:
@@ -122,7 +121,7 @@ class Userdata_manager():
         if self.__check_userdata():
             try:
                 db_connection = sqlite3.connect(self.__db_path)
-            except:
+            except Exception:
                 return False
             db_cursor = db_connection.cursor()
             placeholders = ','.join('?' * len(uid_list))
@@ -132,4 +131,3 @@ class Userdata_manager():
             db_connection.close()
             return True
         return False
-
