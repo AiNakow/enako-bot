@@ -152,8 +152,6 @@ class GszService:
             ratePage_data=ratePage_data["data"]["records"]
             )
         logger.debug(f"渲染模板内容: {content[:100]}...")  # 仅打印前100个字符以避免过长输出
-        with open('./temp/2.html', 'w') as f:
-            f.write(content)
         pic = await convert_html_to_pic2(content=content)
         logger.debug(f"获取用户信息图片: {username}({qq})")
         
