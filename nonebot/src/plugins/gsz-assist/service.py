@@ -2,7 +2,6 @@
 import asyncio
 import base64
 import httpx
-import json
 import os
 import sqlite3
 from io import BytesIO
@@ -147,12 +146,14 @@ class GszService:
             chart_js=os.path.join(template_dir, 'chart.js'),
             username=username, 
             userpic=base64.b64encode(raw_pic).decode("utf-8"), 
-            basic_data=json.dumps(basic_data["data"]), 
-            tech_data=json.dumps(tech_data["data"]), 
-            rateList_data=json.dumps(rateList_data["data"]),
-            ratePage_data=json.dumps(ratePage_data["data"]["records"])
+            basic_data=basic_data["data"], 
+            tech_data=tech_data["data"], 
+            rateList_data=rateList_data["data"],
+            ratePage_data=ratePage_data["data"]["records"]
             )
         logger.debug(f"渲染模板内容: {content[:100]}...")  # 仅打印前100个字符以避免过长输出
+        with open('./temp/2.html', 'w') as f:
+            f.write(content)
         pic = await convert_html_to_pic2(content=content)
         logger.debug(f"获取用户信息图片: {username}({qq})")
         
