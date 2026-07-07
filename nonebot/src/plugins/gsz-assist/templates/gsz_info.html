@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <title>健康麻将联合 - 数据预览</title>
+   <style>{{ daisyui_css_content|safe }}</style>
+   <script>{{ tailwind_js_content|safe }}</script>
+   <script>{{ chart_js_content|safe }}</script>
    <style>
         body {
             background-color: #f0f2f5;
@@ -642,23 +645,17 @@
         }
 
       // 页面加载完成后初始化
-       // 由 Python 端在注入 Chart.js / Tailwind / DaisyUI 后显式调用
-       window.initPage = function() {
-         window.__chartsReady = false;
+       // 所有 JS/CSS 已内联在 HTML 中，Chart.js 在解析阶段同步执行，
+       // DOMContentLoaded 触发时 Chart 已定义。
+       document.addEventListener('DOMContentLoaded', function() {
+           window.__chartsReady = false;
            try {
                const data = fetchData();
                updatePlayerInfo(data.basicData, data.rateListData);
-               updateRankHistory(data.rateListData, data.basicData);
-
-               if (typeof Chart === 'undefined') {
-                   console.error('Chart is not defined');
-                   window.__chartsReady = true;
-                   return;
-               }
-
                const radarChart = initRadarChart(data.techData);
                const doughnutChart = initDoughnutChart(data.techData);
                const rankTrendChart = initRankTrendChart(data.ratePageData, data.basicData.name);
+               updateRankHistory(data.rateListData, data.basicData);
 
                // 主动触发一次 resize，确保 Chart.js 在当前容器尺寸下同步重绘
                requestAnimationFrame(() => {
@@ -671,7 +668,7 @@
                console.error('初始化失败:', error);
                window.__chartsReady = true;
            }
-       };
+       });
    </script>
 </body>
 </html> 

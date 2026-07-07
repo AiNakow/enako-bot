@@ -30,6 +30,16 @@ API_ENDPOINTS = {
         "customerRatePage": API_BASE + '/customer/rate/page'
     }
 
+# 缓存静态资源内容，避免每次渲染都读文件
+_static_cache: dict[str, str] = {}
+
+def _read_static(filename: str) -> str:
+    """读取模板目录下的静态资源文件内容，带缓存。"""
+    if filename not in _static_cache:
+        with open(os.path.join(template_dir, filename), "r", encoding="utf-8") as f:
+            _static_cache[filename] = f.read()
+    return _static_cache[filename]
+
 async def convert_html_to_pic(content: str) -> BytesIO:
     try:
         result = await html_to_pic(html=content, type="jpeg", quality=70, device_scale_factor=2, wait=1000) 
@@ -54,10 +64,7 @@ async def convert_html_to_pic_with_chart_wait(
 ) -> BytesIO:
     """渲染 HTML 到图片，等待所有指定 canvas 绘制完成后再截图。
 
-    Args:
-        content: HTML 内容
-        canvas_ids: 需要等待的 canvas 元素 ID 列表
-        max_wait: 最大等待时间（毫秒）
+    所有 JS/CSS 资源已内联在 HTML 中，不依赖 file:// 外部加载。
     """
     from nonebot_plugin_htmlrender.browser import get_new_page
 
@@ -66,18 +73,7 @@ async def convert_html_to_pic_with_chart_wait(
         page.on("pageerror", lambda err: logger.warning(f"浏览器JS错误: {err}"))
         await page.goto("about:blank")
         await page.set_content(content, wait_until="domcontentloaded")
-
-        # 通过 add_script_tag / add_style_tag 注入外部资源，
-        # 替代 HTML 中的 <script src> / <link> 标签。
-        # Playwright 从文件系统读取文件内容并内联注入，
-        # 不依赖 file:// 路径解析或 networkidle 时机。
-        await page.add_style_tag(path=os.path.join(template_dir, "daisyui.css"))
-        await page.add_script_tag(path=os.path.join(template_dir, "tailwind.js"))
-        await page.add_script_tag(path=os.path.join(template_dir, "chart.js"))
-
-        # 脚本注入完成后显式调用初始化函数
-        await page.evaluate("window.initPage()")
-        await page.wait_for_timeout(500)  # 给 Tailwind JIT 处理 DOM 变更的时间
+        await page.wait_for_timeout(1000)  # 给 Tailwind JIT 处理 DOM 的时间
 
         try:
             await page.wait_for_function(
@@ -172,13 +168,13 @@ class GszService:
 
         template = jinja_env.get_template('gsz_info.html')
         content = template.render(
-            tailwind_js=os.path.join(template_dir, 'tailwind.js'),
-            daisyui_css=os.path.join(template_dir, 'daisyui.css'),
-            chart_js=os.path.join(template_dir, 'chart.js'),
-            username=username, 
-            userpic=base64.b64encode(raw_pic).decode("utf-8"), 
-            basic_data=basic_data["data"], 
-            tech_data=tech_data["data"], 
+            tailwind_js_content=_read_static('tailwind.js'),
+            daisyui_css_content=_read_static('daisyui.css'),
+            chart_js_content=_read_static('chart.js'),
+            username=username,
+            userpic=base64.b64encode(raw_pic).decode("utf-8"),
+            basic_data=basic_data["data"],
+            tech_data=tech_data["data"],
             rateList_data=rateList_data["data"],
             ratePage_data=ratePage_data["data"]["records"]
             )
