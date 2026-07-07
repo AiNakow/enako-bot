@@ -63,6 +63,7 @@ async def convert_html_to_pic_with_chart_wait(
 
     async with get_new_page(2) as page:
         page.on("console", lambda msg: logger.debug(f"浏览器控制台: {msg.text}"))
+        page.on("pageerror", lambda err: logger.warning(f"浏览器JS错误: {err}"))
         await page.goto(f"file://{template_dir}")
         await page.set_content(content, wait_until="networkidle")
         await page.wait_for_timeout(500)  # 给 Tailwind JIT + DOMContentLoaded 基本时间

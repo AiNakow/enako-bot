@@ -644,29 +644,49 @@
             rankGroupsElement.innerHTML = html;
         }
 
-       // 页面加载完成后初始化
-       document.addEventListener('DOMContentLoaded', async function() {
-           window.__chartsReady = false;
+      // 页面加载完成后初始化
+       document.addEventListener('DOMContentLoaded', function() {
+          window.__chartsReady = false;
+           let data;
            try {
-               const data = fetchData();
+               data = fetchData();
                updatePlayerInfo(data.basicData, data.rateListData);
-               const radarChart = initRadarChart(data.techData);
-               const doughnutChart = initDoughnutChart(data.techData);
-               const rankTrendChart = initRankTrendChart(data.ratePageData, data.basicData.name);
                updateRankHistory(data.rateListData, data.basicData);
-
-               // 主动触发一次 resize，确保 Chart.js 在当前容器尺寸下同步重绘
-               requestAnimationFrame(() => {
-                   if (radarChart) radarChart.resize();
-                   if (doughnutChart) doughnutChart.resize();
-                   if (rankTrendChart) rankTrendChart.resize();
-                   window.__chartsReady = true;
-               });
            } catch (error) {
-               console.error('初始化失败:', error);
-               window.__chartsReady = true;  // 即使失败也标记为 ready，避免死等
+               console.error('页面数据初始化失败:', error);
            }
-       });
+
+           // Chart.js 通过 <script src> 从 file:// 加载，Playwright set_content
+           // (CDP setDocumentContent) 可能在外部脚本加载完成前就触发
+           // DOMContentLoaded。轮询等待 Chart 可用后再初始化图表。
+           function tryInitCharts() {
+               if (typeof Chart === 'undefined') {
+                   setTimeout(tryInitCharts, 100);
+                   return;
+               }
+               if (!data) {
+                   window.__chartsReady = true;
+                   return;
+               }
+               try {
+                   const radarChart = initRadarChart(data.techData);
+                   const doughnutChart = initDoughnutChart(data.techData);
+                   const rankTrendChart = initRankTrendChart(data.ratePageData, data.basicData.name);
+
+                   // 主动触发一次 resize，确保 Chart.js 在当前容器尺寸下同步重绘
+                   requestAnimationFrame(() => {
+                       if (radarChart) radarChart.resize();
+                       if (doughnutChart) doughnutChart.resize();
+                       if (rankTrendChart) rankTrendChart.resize();
+                       window.__chartsReady = true;
+                   });
+               } catch (error) {
+                   console.error('图表初始化失败:', error);
+                   window.__chartsReady = true;
+               }
+           }
+           tryInitCharts();
+      });
     </script>
 </body>
 </html> 
