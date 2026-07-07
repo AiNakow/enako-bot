@@ -64,16 +64,17 @@ async def convert_html_to_pic_with_chart_wait(
 ) -> BytesIO:
     """渲染 HTML 到图片，等待所有指定 canvas 绘制完成后再截图。
 
-    所有 JS/CSS 资源已内联在 HTML 中，不依赖 file:// 外部加载。
+    所有 JS/CSS 资源已内联在 HTML 中，Tailwind 已预编译为静态 CSS，
+    无需 JIT 运行时，截图时布局确定性有保障。
     """
     from nonebot_plugin_htmlrender.browser import get_new_page
 
-    async with get_new_page(2) as page:
+    async with get_new_page(2, viewport={"width": 1280, "height": 10}) as page:
         page.on("console", lambda msg: logger.debug(f"浏览器控制台: {msg.text}"))
         page.on("pageerror", lambda err: logger.warning(f"浏览器JS错误: {err}"))
-        await page.goto("about:blank")
-        await page.set_content(content, wait_until="domcontentloaded")
-        await page.wait_for_timeout(1000)  # 给 Tailwind JIT 处理 DOM 的时间
+        await page.goto("file:///")  # 使用 file:// origin，与 htmlrender 标准做法一致
+        await page.set_content(content, wait_until="load")
+        await page.wait_for_timeout(500)  # CSS 已预编译为静态文件，只需等待解析完成
 
         try:
             await page.wait_for_function(
@@ -168,7 +169,7 @@ class GszService:
 
         template = jinja_env.get_template('gsz_info.html')
         content = template.render(
-            tailwind_js_content=_read_static('tailwind.js'),
+            tailwind_css_content=_read_static('tailwind.css'),
             daisyui_css_content=_read_static('daisyui.css'),
             chart_js_content=_read_static('chart.js'),
             username=username,
