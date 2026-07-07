@@ -69,7 +69,6 @@ COPY --from=requirements_stage /wheel /wheel
 # Python deps + Playwright + Chromium
 RUN pip install nonebot2 \
  && pip install --no-index --force-reinstall --find-links=/wheel -r /wheel/requirements.txt \
- && pip install playwright \
  && python -m playwright install chromium \
  && rm -rf /wheel
 

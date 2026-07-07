@@ -64,9 +64,20 @@ async def convert_html_to_pic_with_chart_wait(
     async with get_new_page(2) as page:
         page.on("console", lambda msg: logger.debug(f"浏览器控制台: {msg.text}"))
         page.on("pageerror", lambda err: logger.warning(f"浏览器JS错误: {err}"))
-        await page.goto(f"file://{template_dir}")
-        await page.set_content(content, wait_until="networkidle")
-        await page.wait_for_timeout(500)  # 给 Tailwind JIT + DOMContentLoaded 基本时间
+        await page.goto("about:blank")
+        await page.set_content(content, wait_until="domcontentloaded")
+
+        # 通过 add_script_tag / add_style_tag 注入外部资源，
+        # 替代 HTML 中的 <script src> / <link> 标签。
+        # Playwright 从文件系统读取文件内容并内联注入，
+        # 不依赖 file:// 路径解析或 networkidle 时机。
+        await page.add_style_tag(path=os.path.join(template_dir, "daisyui.css"))
+        await page.add_script_tag(path=os.path.join(template_dir, "tailwind.js"))
+        await page.add_script_tag(path=os.path.join(template_dir, "chart.js"))
+
+        # 脚本注入完成后显式调用初始化函数
+        await page.evaluate("window.initPage()")
+        await page.wait_for_timeout(500)  # 给 Tailwind JIT 处理 DOM 变更的时间
 
         try:
             await page.wait_for_function(
@@ -83,6 +94,7 @@ async def convert_html_to_pic_with_chart_wait(
             type="jpeg",
             quality=70,
         )
+
 
 class GszService:
     userdata_manager = Userdata_manager()

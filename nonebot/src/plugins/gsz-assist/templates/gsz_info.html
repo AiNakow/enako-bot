@@ -3,11 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>健康麻将联合 - 数据预览</title>
-    <script src="{{ tailwind_js }}"></script>
-    <link href="{{ daisyui_css }}" rel="stylesheet" type="text/css" />
-    <script src="{{ chart_js }}"></script>
-    <style>
+   <title>健康麻将联合 - 数据预览</title>
+   <style>
         body {
             background-color: #f0f2f5;
             font-family: "Microsoft YaHei", sans-serif;
@@ -645,48 +642,36 @@
         }
 
       // 页面加载完成后初始化
-       document.addEventListener('DOMContentLoaded', function() {
-          window.__chartsReady = false;
-           let data;
+       // 由 Python 端在注入 Chart.js / Tailwind / DaisyUI 后显式调用
+       window.initPage = function() {
+         window.__chartsReady = false;
            try {
-               data = fetchData();
+               const data = fetchData();
                updatePlayerInfo(data.basicData, data.rateListData);
                updateRankHistory(data.rateListData, data.basicData);
-           } catch (error) {
-               console.error('页面数据初始化失败:', error);
-           }
 
-           // Chart.js 通过 <script src> 从 file:// 加载，Playwright set_content
-           // (CDP setDocumentContent) 可能在外部脚本加载完成前就触发
-           // DOMContentLoaded。轮询等待 Chart 可用后再初始化图表。
-           function tryInitCharts() {
                if (typeof Chart === 'undefined') {
-                   setTimeout(tryInitCharts, 100);
-                   return;
-               }
-               if (!data) {
+                   console.error('Chart is not defined');
                    window.__chartsReady = true;
                    return;
                }
-               try {
-                   const radarChart = initRadarChart(data.techData);
-                   const doughnutChart = initDoughnutChart(data.techData);
-                   const rankTrendChart = initRankTrendChart(data.ratePageData, data.basicData.name);
 
-                   // 主动触发一次 resize，确保 Chart.js 在当前容器尺寸下同步重绘
-                   requestAnimationFrame(() => {
-                       if (radarChart) radarChart.resize();
-                       if (doughnutChart) doughnutChart.resize();
-                       if (rankTrendChart) rankTrendChart.resize();
-                       window.__chartsReady = true;
-                   });
-               } catch (error) {
-                   console.error('图表初始化失败:', error);
+               const radarChart = initRadarChart(data.techData);
+               const doughnutChart = initDoughnutChart(data.techData);
+               const rankTrendChart = initRankTrendChart(data.ratePageData, data.basicData.name);
+
+               // 主动触发一次 resize，确保 Chart.js 在当前容器尺寸下同步重绘
+               requestAnimationFrame(() => {
+                   if (radarChart) radarChart.resize();
+                   if (doughnutChart) doughnutChart.resize();
+                   if (rankTrendChart) rankTrendChart.resize();
                    window.__chartsReady = true;
-               }
+               });
+           } catch (error) {
+               console.error('初始化失败:', error);
+               window.__chartsReady = true;
            }
-           tryInitCharts();
-      });
-    </script>
+       };
+   </script>
 </body>
 </html> 
