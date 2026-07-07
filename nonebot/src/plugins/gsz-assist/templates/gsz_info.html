@@ -144,17 +144,24 @@
             </div>
         </div>
 
-        <!-- 图表区域 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="card bg-base-100 shadow-xl p-4">
-                <h3 class="text-lg font-bold mb-4"></h3>
-                <canvas id="radarChart"></canvas>
-            </div>
-            <div class="card bg-base-100 shadow-xl p-4">
-                <h3 class="text-lg font-bold mb-4"></h3>
-                <canvas id="doughnutChart"></canvas>
-            </div>
-        </div>
+       <!-- 图表区域 -->
+       <div class="grid grid-cols-1 md:grid-cols-2 gap-4"
+             style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px;">
+           <div class="card bg-base-100 shadow-xl p-4"
+                style="background: white; border-radius: 0.75rem; padding: 16px;">
+               <h3 class="text-lg font-bold mb-4"></h3>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="radarChart"></canvas>
+                </div>
+           </div>
+           <div class="card bg-base-100 shadow-xl p-4"
+                style="background: white; border-radius: 0.75rem; padding: 16px;">
+               <h3 class="text-lg font-bold mb-4"></h3>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="doughnutChart"></canvas>
+                </div>
+           </div>
+      </div>
     </div>
 
     <script>
@@ -405,10 +412,12 @@
                         pointBackgroundColor: 'rgba(30, 64, 175, 1)',
                     }]
                 },
-                options: {
-                    animation: false,
-                    scales: {
-                        r: {
+               options: {
+                   animation: false,
+                   responsive: true,
+                   maintainAspectRatio: false,
+                   scales: {
+                       r: {
                             beginAtZero: true,
                             max: 100,
                             ticks: {
@@ -463,9 +472,11 @@
                         borderColor: 'white'
                     }]
                 },
-                options: {
-                    animation: false,
-                    cutout: '60%',
+               options: {
+                   animation: false,
+                   responsive: true,
+                   maintainAspectRatio: false,
+                   cutout: '60%',
                     plugins: {
                         legend: {
                             position: 'right',
@@ -633,20 +644,29 @@
             rankGroupsElement.innerHTML = html;
         }
 
-        // 页面加载完成后初始化
-        document.addEventListener('DOMContentLoaded', async function() {
-            try {
-                const data = fetchData();
-                updatePlayerInfo(data.basicData, data.rateListData);
-                initRadarChart(data.techData);
-                initDoughnutChart(data.techData);
-                initRankTrendChart(data.ratePageData, data.basicData.name);
-                updateRankHistory(data.rateListData, data.basicData);
-            } catch (error) {
-                console.error('初始化失败:', error);
-               // alert('数据加载失败，请刷新页面重试');
-            }
-        });
+       // 页面加载完成后初始化
+       document.addEventListener('DOMContentLoaded', async function() {
+           window.__chartsReady = false;
+           try {
+               const data = fetchData();
+               updatePlayerInfo(data.basicData, data.rateListData);
+               const radarChart = initRadarChart(data.techData);
+               const doughnutChart = initDoughnutChart(data.techData);
+               const rankTrendChart = initRankTrendChart(data.ratePageData, data.basicData.name);
+               updateRankHistory(data.rateListData, data.basicData);
+
+               // 主动触发一次 resize，确保 Chart.js 在当前容器尺寸下同步重绘
+               requestAnimationFrame(() => {
+                   if (radarChart) radarChart.resize();
+                   if (doughnutChart) doughnutChart.resize();
+                   if (rankTrendChart) rankTrendChart.resize();
+                   window.__chartsReady = true;
+               });
+           } catch (error) {
+               console.error('初始化失败:', error);
+               window.__chartsReady = true;  // 即使失败也标记为 ready，避免死等
+           }
+       });
     </script>
 </body>
 </html> 

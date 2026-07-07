@@ -4,6 +4,7 @@ import base64
 import httpx
 import os
 import sqlite3
+import json
 from io import BytesIO
 
 # 第三方库
@@ -46,6 +47,42 @@ async def convert_html_to_pic2(content: str) -> BytesIO:
         wait=1000,
     )
 
+async def convert_html_to_pic_with_chart_wait(
+    content: str,
+    canvas_ids: list[str],
+    max_wait: int = 5000,
+) -> BytesIO:
+    """渲染 HTML 到图片，等待所有指定 canvas 绘制完成后再截图。
+
+    Args:
+        content: HTML 内容
+        canvas_ids: 需要等待的 canvas 元素 ID 列表
+        max_wait: 最大等待时间（毫秒）
+    """
+    from nonebot_plugin_htmlrender.browser import get_new_page
+
+    async with get_new_page(2) as page:
+        page.on("console", lambda msg: logger.debug(f"浏览器控制台: {msg.text}"))
+        await page.goto(f"file://{template_dir}")
+        await page.set_content(content, wait_until="networkidle")
+        await page.wait_for_timeout(500)  # 给 Tailwind JIT + DOMContentLoaded 基本时间
+
+        try:
+            await page.wait_for_function(
+                "() => window.__chartsReady === true",
+                timeout=max_wait,
+            )
+            await page.wait_for_timeout(200)  # 确保 rAF 回调中的 resize() 完全执行
+        except Exception:
+            logger.warning(f"图表等待超时 ({max_wait}ms)，继续截图")
+            await page.wait_for_timeout(1000)
+
+        return await page.screenshot(
+            full_page=True,
+            type="jpeg",
+            quality=70,
+        )
+
 class GszService:
     userdata_manager = Userdata_manager()
     ratedata_manager = Ratedata_manager()
@@ -57,21 +94,9 @@ class GszService:
             basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}&mobile=', timeout=timeout_config).json()
             if basic_data['code'] != 200:
                 raise Exception("获取basic_data失败")
-        except httpx.ConnectError as e:
-            logger.debug(f"连接失败：{e}")
-            return False
-        except httpx.ReadTimeout as e:
-            logger.debug(f"读取超时：{e}")
-            return False
-        except httpx.HTTPStatusError as e:
-            logger.debug(f"响应状态码错误: {e.response.status_code}")
-            return False
-        except httpx.RequestError as e:
-            logger.debug(f"请求失败：{e}")
-            return False
         except Exception as e:
-            logger.debug(f"其他错误：{e}")
-            return False
+            logger.debug(f"API请求失败：{e}")
+            raise
 
         if basic_data['data'] == "":
             return False
@@ -125,16 +150,9 @@ class GszService:
             ratePage_data = httpx.post(API_ENDPOINTS["customerRatePage"] + f'?customerId={custom_id}&pageNo=1&pageSize=10', timeout=timeout_config).json()
             if ratePage_data['code'] != 200:
                 raise Exception("获取ratePage_data失败")
-        except httpx.ConnectError as e:
-            logger.debug(f"连接失败：{e}")
-        except httpx.ReadTimeout as e:
-            logger.debug(f"读取超时：{e}")
-        except httpx.HTTPStatusError as e:
-            logger.debug(f"响应状态码错误: {e.response.status_code}")
-        except httpx.RequestError as e:
-            logger.debug(f"请求失败：{e}")
         except Exception as e:
-            logger.debug(f"其他错误：{e}")
+            logger.debug(f"API请求失败：{e}")
+            raise
 
         logger.debug(f"获取用户信息: {username}({qq})")
         raw_pic = httpx.get(f'https://q.qlogo.cn/headimg_dl?dst_uin={qq}&spec=640&img_type=jpg').content
@@ -152,7 +170,11 @@ class GszService:
             ratePage_data=ratePage_data["data"]["records"]
             )
         logger.debug(f"渲染模板内容: {content[:100]}...")  # 仅打印前100个字符以避免过长输出
-        pic = await convert_html_to_pic2(content=content)
+        pic = await convert_html_to_pic_with_chart_wait(
+            content=content,
+            canvas_ids=["radarChart", "doughnutChart", "rankTrendChart"],
+            max_wait=5000,
+        )
         logger.debug(f"获取用户信息图片: {username}({qq})")
         
         return pic
