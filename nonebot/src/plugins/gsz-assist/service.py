@@ -184,6 +184,44 @@ async def convert_html_to_pic_with_chart_wait(
             logger.warning(f"图表等待超时 ({max_wait}ms)，继续截图")
             await page.wait_for_timeout(1000)
 
+        page_size = await page.evaluate(
+            """() => ({
+                width: Math.ceil(Math.max(
+                    document.documentElement.scrollWidth,
+                    document.body ? document.body.scrollWidth : 0,
+                    window.innerWidth
+                )),
+                height: Math.ceil(Math.max(
+                    document.documentElement.scrollHeight,
+                    document.body ? document.body.scrollHeight : 0,
+                    window.innerHeight
+                )),
+            })"""
+        )
+        await page.set_viewport_size(
+            {
+                "width": max(1280, int(page_size["width"])),
+                "height": max(720, int(page_size["height"])),
+            }
+        )
+        await page.evaluate(
+            """(canvasIds) => new Promise((resolve) => {
+                for (const id of canvasIds) {
+                    const canvas = document.getElementById(id);
+                    const chart = canvas && window.Chart && window.Chart.getChart
+                        ? window.Chart.getChart(canvas)
+                        : null;
+                    if (chart) {
+                        chart.resize();
+                        chart.update('none');
+                        chart.draw();
+                    }
+                }
+                requestAnimationFrame(() => requestAnimationFrame(resolve));
+            })""",
+            canvas_ids,
+        )
+
         await log_chart_debug(page, "before_screenshot")
 
         return await page.screenshot(
