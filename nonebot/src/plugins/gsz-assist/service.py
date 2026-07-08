@@ -69,6 +69,104 @@ async def convert_html_to_pic_with_chart_wait(
     """
     from nonebot_plugin_htmlrender.browser import get_new_page
 
+    async def log_chart_debug(page, stage: str) -> None:
+        """Log browser-side canvas status before screenshot for diagnosis."""
+        try:
+            debug_info = await page.evaluate(
+                """(canvasIds) => {
+                    const sampleCanvas = (canvas) => {
+                        const ctx = canvas.getContext('2d');
+                        if (!ctx || canvas.width === 0 || canvas.height === 0) {
+                            return {
+                                sampled: false,
+                                nonTransparent: 0,
+                                nonWhite: 0,
+                                sampleCount: 0,
+                            };
+                        }
+
+                        const width = canvas.width;
+                        const height = canvas.height;
+                        const points = [];
+                        for (let y = 0; y < 5; y++) {
+                            for (let x = 0; x < 5; x++) {
+                                points.push([
+                                    Math.floor((x + 0.5) * width / 5),
+                                    Math.floor((y + 0.5) * height / 5),
+                                ]);
+                            }
+                        }
+
+                        let nonTransparent = 0;
+                        let nonWhite = 0;
+                        for (const [x, y] of points) {
+                            const pixel = ctx.getImageData(x, y, 1, 1).data;
+                            const [r, g, b, a] = pixel;
+                            if (a !== 0) nonTransparent++;
+                            if (!(r > 245 && g > 245 && b > 245 && a > 0)) nonWhite++;
+                        }
+
+                        return {
+                            sampled: true,
+                            nonTransparent,
+                            nonWhite,
+                            sampleCount: points.length,
+                        };
+                    };
+
+                    return {
+                        chartsReady: window.__chartsReady,
+                        chartsError: window.__chartsError ? String(window.__chartsError) : null,
+                        chartDefined: typeof window.Chart !== 'undefined',
+                        devicePixelRatio: window.devicePixelRatio,
+                        viewport: {
+                            innerWidth: window.innerWidth,
+                            innerHeight: window.innerHeight,
+                            scrollWidth: document.documentElement.scrollWidth,
+                            scrollHeight: document.documentElement.scrollHeight,
+                            bodyScrollHeight: document.body ? document.body.scrollHeight : null,
+                        },
+                        canvases: canvasIds.map((id) => {
+                            const canvas = document.getElementById(id);
+                            if (!canvas) {
+                                return { id, exists: false };
+                            }
+                            const rect = canvas.getBoundingClientRect();
+                            const chart = window.Chart && window.Chart.getChart
+                                ? window.Chart.getChart(canvas)
+                                : null;
+                            return {
+                                id,
+                                exists: true,
+                                attrWidth: canvas.width,
+                                attrHeight: canvas.height,
+                                clientWidth: canvas.clientWidth,
+                                clientHeight: canvas.clientHeight,
+                                rect: {
+                                    x: rect.x,
+                                    y: rect.y,
+                                    width: rect.width,
+                                    height: rect.height,
+                                },
+                                display: getComputedStyle(canvas).display,
+                                visibility: getComputedStyle(canvas).visibility,
+                                chartExists: Boolean(chart),
+                                chartSize: chart ? {
+                                    width: chart.width,
+                                    height: chart.height,
+                                    attached: chart.attached,
+                                } : null,
+                                sample: sampleCanvas(canvas),
+                            };
+                        }),
+                    };
+                }""",
+                canvas_ids,
+            )
+            logger.warning(f"图表诊断[{stage}]: {json.dumps(debug_info, ensure_ascii=False)}")
+        except Exception:
+            logger.warning(f"图表诊断[{stage}]失败", exc_info=True)
+
     async with get_new_page(2, viewport={"width": 1280, "height": 10}) as page:
         page.on("console", lambda msg: logger.debug(f"浏览器控制台: {msg.text}"))
         page.on("pageerror", lambda err: logger.warning(f"浏览器JS错误: {err}"))
@@ -85,6 +183,8 @@ async def convert_html_to_pic_with_chart_wait(
         except Exception:
             logger.warning(f"图表等待超时 ({max_wait}ms)，继续截图")
             await page.wait_for_timeout(1000)
+
+        await log_chart_debug(page, "before_screenshot")
 
         return await page.screenshot(
             full_page=True,
