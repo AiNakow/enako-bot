@@ -161,4 +161,7 @@ app/
 *.onnx
 
 temp/
+.agents/
+.codex/
+
 
