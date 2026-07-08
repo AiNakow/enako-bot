@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>健康麻将联合 - 段位排行榜</title>
-    <script src="{{ tailwind_js }}"></script>
-    <link href="{{ daisyui_css }}" rel="stylesheet" type="text/css" />
+    <style>{{ daisyui_css_content|safe }}</style>
+    <style>{{ tailwind_css_content|safe }}</style>
     <style>
         body {
             background-color: #f0f2f5;
@@ -28,9 +28,14 @@
             color: #1e40af;
         }
         .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             padding: 0.5em 1em;
             border-radius: 9999px;
             font-weight: 500;
+            line-height: 1;
+            white-space: nowrap;
         }
         .table th {
             background-color: #f8fafc;
@@ -41,6 +46,18 @@
         }
         .table tr:hover {
             background-color: #f1f5f9;
+        }
+        .rank-col {
+            width: 5.5rem;
+            min-width: 5.5rem;
+            white-space: nowrap;
+            text-align: center;
+        }
+        .rate-name-col {
+            min-width: 12rem;
+            max-width: 18rem;
+            white-space: normal;
+            word-break: break-word;
         }
     </style>
 </head>
@@ -54,9 +71,9 @@
                         <tr>
                             <th>排名</th>
                             <th>玩家名称</th>
-                            <th>段位</th>
+                            <th class="rank-col">段位</th>
                             <th>RATE</th>
-                            <th>雀庄</th>
+                            <th class="rate-name-col">雀庄</th>
                             <th>平均点数</th>
                             <th>升段均顺</th>
                             <th>升段局</th>
@@ -72,11 +89,11 @@
                         <tr>
                             <td class="font-bold">{{ loop.index }}</td>
                             <td class="font-medium">{{ record.name }}</td>
-                            <td>
+                            <td class="rank-col">
                                 <span class="badge bg-blue-100 text-blue-800">{{ record.rankName }}</span>
                             </td>
                             <td class="font-mono">{{ record.rate }}</td>
-                            <td>{{ record.rateName }}</td>
+                            <td class="rate-name-col">{{ record.rateName }}</td>
                             <td class="font-mono">{{ record.avgPoint }}</td>
                             <td class="font-mono">{{ "%.2f"|format(record.upAvgPosition or 0) }}</td>
                             <td class="font-mono">{{ record.upRate or 0 }}</td>

@@ -164,4 +164,6 @@ temp/
 .agents/
 .codex/
 
+# Node build dependencies
+node_modules/
 

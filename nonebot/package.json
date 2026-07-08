@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "build:gsz-css": "tailwindcss -c src/plugins/gsz-assist/assets/tailwind.config.js -i src/plugins/gsz-assist/assets/tailwind.input.css -o src/plugins/gsz-assist/templates/tailwind.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

@@ -40,6 +40,23 @@ def _read_static(filename: str) -> str:
             _static_cache[filename] = f.read()
     return _static_cache[filename]
 
+def _render_style_context() -> dict[str, str]:
+    return {
+        "tailwind_css_content": _read_static("tailwind.css"),
+        "daisyui_css_content": _read_static("daisyui.css"),
+    }
+
+def _handle_browser_page_error(err) -> None:
+    text = str(err)
+    ignored_errors = (
+        "start is not defined",
+        "addRow is not defined",
+    )
+    if any(ignored in text for ignored in ignored_errors):
+        logger.debug(f"忽略浏览器JS噪声: {text}")
+        return
+    logger.warning(f"浏览器JS错误: {text}")
+
 async def convert_html_to_pic(content: str) -> BytesIO:
     try:
         result = await html_to_pic(html=content, type="jpeg", quality=70, device_scale_factor=2, wait=1000) 
@@ -69,107 +86,9 @@ async def convert_html_to_pic_with_chart_wait(
     """
     from nonebot_plugin_htmlrender.browser import get_new_page
 
-    async def log_chart_debug(page, stage: str) -> None:
-        """Log browser-side canvas status before screenshot for diagnosis."""
-        try:
-            debug_info = await page.evaluate(
-                """(canvasIds) => {
-                    const sampleCanvas = (canvas) => {
-                        const ctx = canvas.getContext('2d');
-                        if (!ctx || canvas.width === 0 || canvas.height === 0) {
-                            return {
-                                sampled: false,
-                                nonTransparent: 0,
-                                nonWhite: 0,
-                                sampleCount: 0,
-                            };
-                        }
-
-                        const width = canvas.width;
-                        const height = canvas.height;
-                        const points = [];
-                        for (let y = 0; y < 5; y++) {
-                            for (let x = 0; x < 5; x++) {
-                                points.push([
-                                    Math.floor((x + 0.5) * width / 5),
-                                    Math.floor((y + 0.5) * height / 5),
-                                ]);
-                            }
-                        }
-
-                        let nonTransparent = 0;
-                        let nonWhite = 0;
-                        for (const [x, y] of points) {
-                            const pixel = ctx.getImageData(x, y, 1, 1).data;
-                            const [r, g, b, a] = pixel;
-                            if (a !== 0) nonTransparent++;
-                            if (!(r > 245 && g > 245 && b > 245 && a > 0)) nonWhite++;
-                        }
-
-                        return {
-                            sampled: true,
-                            nonTransparent,
-                            nonWhite,
-                            sampleCount: points.length,
-                        };
-                    };
-
-                    return {
-                        chartsReady: window.__chartsReady,
-                        chartsError: window.__chartsError ? String(window.__chartsError) : null,
-                        chartDefined: typeof window.Chart !== 'undefined',
-                        devicePixelRatio: window.devicePixelRatio,
-                        viewport: {
-                            innerWidth: window.innerWidth,
-                            innerHeight: window.innerHeight,
-                            scrollWidth: document.documentElement.scrollWidth,
-                            scrollHeight: document.documentElement.scrollHeight,
-                            bodyScrollHeight: document.body ? document.body.scrollHeight : null,
-                        },
-                        canvases: canvasIds.map((id) => {
-                            const canvas = document.getElementById(id);
-                            if (!canvas) {
-                                return { id, exists: false };
-                            }
-                            const rect = canvas.getBoundingClientRect();
-                            const chart = window.Chart && window.Chart.getChart
-                                ? window.Chart.getChart(canvas)
-                                : null;
-                            return {
-                                id,
-                                exists: true,
-                                attrWidth: canvas.width,
-                                attrHeight: canvas.height,
-                                clientWidth: canvas.clientWidth,
-                                clientHeight: canvas.clientHeight,
-                                rect: {
-                                    x: rect.x,
-                                    y: rect.y,
-                                    width: rect.width,
-                                    height: rect.height,
-                                },
-                                display: getComputedStyle(canvas).display,
-                                visibility: getComputedStyle(canvas).visibility,
-                                chartExists: Boolean(chart),
-                                chartSize: chart ? {
-                                    width: chart.width,
-                                    height: chart.height,
-                                    attached: chart.attached,
-                                } : null,
-                                sample: sampleCanvas(canvas),
-                            };
-                        }),
-                    };
-                }""",
-                canvas_ids,
-            )
-            logger.warning(f"图表诊断[{stage}]: {json.dumps(debug_info, ensure_ascii=False)}")
-        except Exception:
-            logger.warning(f"图表诊断[{stage}]失败", exc_info=True)
-
     async with get_new_page(2, viewport={"width": 1280, "height": 10}) as page:
         page.on("console", lambda msg: logger.debug(f"浏览器控制台: {msg.text}"))
-        page.on("pageerror", lambda err: logger.warning(f"浏览器JS错误: {err}"))
+        page.on("pageerror", _handle_browser_page_error)
         await page.goto("file:///")  # 使用 file:// origin，与 htmlrender 标准做法一致
         await page.set_content(content, wait_until="load")
         await page.wait_for_timeout(500)  # CSS 已预编译为静态文件，只需等待解析完成
@@ -221,8 +140,6 @@ async def convert_html_to_pic_with_chart_wait(
             })""",
             canvas_ids,
         )
-
-        await log_chart_debug(page, "before_screenshot")
 
         return await page.screenshot(
             full_page=True,
@@ -307,8 +224,7 @@ class GszService:
 
         template = jinja_env.get_template('gsz_info.html')
         content = template.render(
-            tailwind_css_content=_read_static('tailwind.css'),
-            daisyui_css_content=_read_static('daisyui.css'),
+            **_render_style_context(),
             chart_js_content=_read_static('chart.js'),
             username=username,
             userpic=base64.b64encode(raw_pic).decode("utf-8"),
@@ -344,8 +260,7 @@ class GszService:
         
         template = jinja_env.get_template('hate.html')
         content = template.render(
-            tailwind_js=os.path.join(template_dir, 'tailwind.js'),
-            daisyui_css=os.path.join(template_dir, 'daisyui.css'),
+            **_render_style_context(),
             flag=0,
             username=username,
             hate_data=hate_data_top["data"]["records"]
@@ -386,8 +301,7 @@ class GszService:
         
         template = jinja_env.get_template('hate.html')
         content = template.render(
-            tailwind_js=os.path.join(template_dir, 'tailwind.js'),
-            daisyui_css=os.path.join(template_dir, 'daisyui.css'),
+            **_render_style_context(),
             flag=1,
             username=username,
             hate_data=hate_data_last
@@ -460,8 +374,7 @@ class GszService:
 
         template = jinja_env.get_template('rank_list.html')
         content = template.render(
-            daisyui_css=os.path.join(template_dir, 'daisyui.css'),
-            tailwind_js=os.path.join(template_dir, 'tailwind.js'),
+            **_render_style_context(),
             rank_data=rank_data
         )
 
