@@ -160,3 +160,7 @@ app/
 # model
 *.onnx
 
+# Local environment files
+.env*
+!.env.example
+!.env.*.example
