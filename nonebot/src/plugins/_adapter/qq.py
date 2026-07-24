@@ -13,6 +13,9 @@ class QQBridge:
         return MessageSegment.mention_user(user_id)
 
     def message_with_sender_mention(self, event: Any, message: Any) -> Any:
+        if not self.is_group_event(event):
+            return message
+
         author = getattr(event, "author", None)
         username = getattr(author, "username", None)
         sender = username or self.get_user_id(event)
