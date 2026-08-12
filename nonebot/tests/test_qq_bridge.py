@@ -26,3 +26,27 @@ def test_group_message_includes_sender_mention() -> None:
         message = QQBridge().message_with_sender_mention(event, "回复内容")
 
     assert str(message) == "@Alice\n回复内容"
+
+
+def test_group_owner_is_authorized() -> None:
+    event = SimpleNamespace(member_role="owner")
+
+    assert QQBridge().is_group_admin_or_owner(event) is True
+
+
+def test_group_admin_is_authorized() -> None:
+    event = SimpleNamespace(author=SimpleNamespace(member_role="admin"))
+
+    assert QQBridge().is_group_admin_or_owner(event) is True
+
+
+def test_regular_group_member_is_not_authorized() -> None:
+    event = SimpleNamespace(member_role="member")
+
+    assert QQBridge().is_group_admin_or_owner(event) is False
+
+
+def test_missing_group_member_role_is_not_authorized() -> None:
+    event = SimpleNamespace()
+
+    assert QQBridge().is_group_admin_or_owner(event) is False

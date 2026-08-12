@@ -8,9 +8,9 @@ driver = nonebot.get_driver()
 adapter = getattr(driver.config, "bot_adapter", "qq").lower()
 
 if adapter == "qq":
-    from nonebot.adapters.qq import Adapter as QQAdapter
+    from src.qq_adapter import RawPayloadLoggingQQAdapter
 
-    driver.register_adapter(QQAdapter)
+    driver.register_adapter(RawPayloadLoggingQQAdapter)
 elif adapter in {"onebot11", "onebot-v11", "onebot_v11"}:
     from nonebot.adapters.onebot.v11 import Adapter as OneBotV11Adapter
 

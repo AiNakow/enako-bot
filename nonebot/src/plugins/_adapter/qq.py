@@ -32,7 +32,11 @@ class QQBridge:
         return str(group_id) if group_id is not None else None
 
     def is_group_admin_or_owner(self, event: Any) -> bool:
-        return True
+        author = getattr(event, "author", None)
+        role = getattr(author, "member_role", None)
+        if role is None:
+            role = getattr(event, "member_role", None)
+        return isinstance(role, str) and role.lower() in {"admin", "owner"}
 
     def get_mentioned_user_ids(self, event: Any) -> list[str]:
         mentions = getattr(event, "mentions", []) or []
