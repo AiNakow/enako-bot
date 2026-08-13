@@ -42,9 +42,30 @@ if not os.path.exists(data_dir):
     os.mkdir(data_dir)
 
 get_help = on_fullmatch("日麻小助手", priority=10, block=True)
-get_mahjong_helper = on_command("面麻计分器", priority=10, block=True)
-get_tenhou_paili = on_command("牌理", aliases={"天凤牌理"}, priority=10, block=True)
-get_mahjong_ocr = on_command("识图牌理", priority=10, block=True)
+get_mahjong_helper = on_command(
+    "面麻计分器",
+    priority=10,
+    block=True,
+    state={"qq_command_panel": {"description": "获取面麻计分器"}},
+)
+get_tenhou_paili = on_command(
+    "牌理",
+    aliases={"天凤牌理"},
+    priority=10,
+    block=True,
+    state={
+        "qq_command_panel": {
+            "name": "牌理",
+            "description": "分析牌理",
+        }
+    },
+)
+get_mahjong_ocr = on_command(
+    "识图牌理",
+    priority=10,
+    block=True,
+    state={"qq_command_panel": {"description": "识别手牌并分析牌理"}},
+)
 
 
 @get_help.handle()

@@ -59,12 +59,53 @@ def at(user_id: str):
 
 
 gsz_help = on_fullmatch("公式战小助手", priority=10, block=True)
-bind_gsz_userinfo = on_command("公式战绑定", priority=10, block=True)
-get_gsz_userinfo = on_command("吃鱼", priority=10, block=True)
-get_gsz_rank_top = on_command("仇恨榜", priority=10, block=True)
-get_gsz_rank_last = on_command("好人榜", priority=10, block=True)
-bind_gsz_rateinfo = on_command("雀庄绑定", priority=10, block=True)
-get_gsz_rank_list = on_command("排行榜", priority=10, block=True)
+bind_gsz_userinfo = on_command(
+    "公式战绑定",
+    priority=10,
+    block=True,
+    state={"qq_command_panel": {"description": "绑定公式战账号"}},
+)
+get_gsz_userinfo = on_command(
+    "吃鱼",
+    priority=10,
+    block=True,
+    state={"qq_command_panel": {"description": "查询公式战信息"}},
+)
+get_gsz_rank_top = on_command(
+    "仇恨榜",
+    priority=10,
+    block=True,
+    state={"qq_command_panel": {"description": "查询仇恨榜"}},
+)
+get_gsz_rank_last = on_command(
+    "好人榜",
+    priority=10,
+    block=True,
+    state={"qq_command_panel": {"description": "查询好人榜"}},
+)
+bind_gsz_rateinfo = on_command(
+    "雀庄绑定",
+    priority=10,
+    block=True,
+    state={
+        "qq_command_panel": {
+            "description": "绑定本群雀庄",
+            "only_admin": True,
+            "scopes": ["group"],
+        }
+    },
+)
+get_gsz_rank_list = on_command(
+    "排行榜",
+    priority=10,
+    block=True,
+    state={
+        "qq_command_panel": {
+            "description": "查询雀庄排行榜",
+            "scopes": ["group"],
+        }
+    },
+)
 
 @gsz_help.handle()
 async def gsz_help_handler(event: Event, bot: Bot):
