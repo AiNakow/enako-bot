@@ -214,7 +214,7 @@ def _hate_render_record(record: dict[str, Any], *, goodwill: bool) -> dict[str, 
     return {
         "name": record.get("opponentName") or "-",
         "total": _integer(record.get("meetCount")),
-        "hatred": -hate_value if goodwill else hate_value,
+        "hatred": _integer(-hate_value if goodwill else hate_value),
         "wincount": _integer(record.get("myWinCount")),
         "winRate": _number(record.get("myWinRate")) / 100,
         "opSort1": _integer(record.get("opponentPosition1")),

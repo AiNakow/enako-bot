@@ -125,6 +125,9 @@ async def mahjong_ocr_start(args: Annotated[Message, CommandArg()], state: T_Sta
     if len(arg_list) > 0 and "一般" in arg_list[0]:
         mode = 1
 
+    if not mahjong_analyzer.is_valid_handstr(hand):
+        await get_tenhou_paili.finish(bridge.message_with_sender_mention(event, "未识别到长度符合规则的手牌"))
+
     pic = await MahjongService.tenhou_paili_analyse(hand, mode)
     message = bridge.image_from_bytes(pic)
 
