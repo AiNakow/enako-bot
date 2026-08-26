@@ -14,6 +14,9 @@ INFRASTRUCTURE_PLUGINS = {
     "_adapter": "src.infrastructure_plugins._adapter",
 }
 
+QQ_INFRASTRUCTURE_PLUGINS = {
+    "_qq_command_panel": "src.qq_plugins.qq_command_panel",
+}
 
 def _discover_plugins(plugin_dir: str) -> dict[str, str]:
     module_prefix = plugin_dir.replace("/", ".")
@@ -24,8 +27,13 @@ def _discover_plugins(plugin_dir: str) -> dict[str, str]:
     }
 
 
-def _load_infrastructure_plugins() -> None:
-    for plugin_name, module_path in INFRASTRUCTURE_PLUGINS.items():
+def _load_infrastructure_plugins(adapter: str) -> None:
+    plugins = dict(INFRASTRUCTURE_PLUGINS)
+
+    if adapter == "qq":
+        plugins.update(QQ_INFRASTRUCTURE_PLUGINS)
+
+    for plugin_name, module_path in plugins.items():
         if nonebot.load_plugin(module_path) is None:
             raise RuntimeError(
                 f"Failed to load infrastructure plugin: {plugin_name}"
@@ -79,7 +87,7 @@ elif adapter in {"onebot11", "onebot-v11", "onebot_v11"}:
 else:
     raise RuntimeError(f"Unsupported BOT_ADAPTER: {adapter}")
 
-_load_infrastructure_plugins()
+_load_infrastructure_plugins(adapter)
 _load_configured_business_plugins(adapter)
 
 if __name__ == "__main__":
