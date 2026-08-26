@@ -1,44 +1,63 @@
-# 标准库
+from __future__ import annotations
+
 import asyncio
 import base64
-import httpx
+import math
 import os
 import sqlite3
-import json
+import threading
+from collections.abc import Awaitable, Callable
 from io import BytesIO
+from typing import Any, TypeVar
 
-# 第三方库
-from nonebot_plugin_htmlrender import html_to_pic
+import httpx
 from nonebot.log import logger
-from PIL import Image
+from nonebot_plugin_htmlrender import html_to_pic
 
-# 本地模块
-from .common import *
+from .common import template_dir
+from .formula_api_client import FormulaApiClient, FormulaApiError
 from .ratedata_manage import Ratedata_manager
-from .template_env import *
+from .template_env import jinja_env
 from .userdata_manage import Userdata_manager
 
-API_BASE = 'https://gsz.rmlinking.com/gszapi'
+HISTORY_ENDPOINT = "/index/formula/customer/history"
+PARTNER_STATS_ENDPOINT = "/index/formula/customer/partner-stats"
+RECORDS_ENDPOINT = "/index/formula/customer/records"
+MAHJONG_LIST_ENDPOINT = "/index/formula/mahjong/list"
+GRADE_RANK_ENDPOINT = "/index/formula/rank/grade/grid"
 
-API_ENDPOINTS = {
-        "basic": API_BASE + '/customer/getCustomerByName',
-        "tech": API_BASE + '/score/tech',
-        "customerRateList": API_BASE + '/customer/getCustomerRateList',
-        "hate": API_BASE + '/score/hate',
-        "rateList": API_BASE + '/customer/rate/list',
-        "findRanking": API_BASE + '/customer/findRanking',
-        "customerRatePage": API_BASE + '/customer/rate/page'
-    }
+MATCH_GRADES = (
+    "新人",
+    "5级",
+    "4级",
+    "3级",
+    "2级",
+    "1级",
+    "初段",
+    "二段",
+    "三段",
+    "四段",
+    "五段",
+    "六段",
+    "七段",
+    "八段",
+    "九段",
+    "十段",
+)
+PROMOTION_ROUNDS = (7, 7, 10, 10, 12, 16, 16, 20, 25, 25, 30, 40, 45, 50, 0, 0)
+PROMOTION_SUMS = (20, 19, 27, 27, 31, 41, 40, 50, 60, 60, 69, 84, 90, 95, 0, 0)
+PROMOTION_AVERAGES = (2.9, 2.8, 2.7, 2.7, 2.6, 2.6, 2.5, 2.5, 2.4, 2.4, 2.3, 2.1, 2.0, 1.9, 0, 0)
 
-# 缓存静态资源内容，避免每次渲染都读文件
 _static_cache: dict[str, str] = {}
+T = TypeVar("T")
+
 
 def _read_static(filename: str) -> str:
-    """读取模板目录下的静态资源文件内容，带缓存。"""
     if filename not in _static_cache:
-        with open(os.path.join(template_dir, filename), "r", encoding="utf-8") as f:
-            _static_cache[filename] = f.read()
+        with open(os.path.join(template_dir, filename), encoding="utf-8") as file:
+            _static_cache[filename] = file.read()
     return _static_cache[filename]
+
 
 def _render_style_context() -> dict[str, str]:
     return {
@@ -46,59 +65,241 @@ def _render_style_context() -> dict[str, str]:
         "daisyui_css_content": _read_static("daisyui.css"),
     }
 
-def _handle_browser_page_error(err) -> None:
-    text = str(err)
-    ignored_errors = (
-        "start is not defined",
-        "addRow is not defined",
+
+def _number(value: Any, default: float = 0.0) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return default
+    return number if math.isfinite(number) else default
+
+
+def _integer(value: Any, default: int = 0) -> int:
+    return int(_number(value, default))
+
+
+def _require_dict(value: Any, endpoint: str, label: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise FormulaApiError(endpoint, f"{label}格式无效")
+    return value
+
+
+def _records(result: Any, endpoint: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    page = _require_dict(result, endpoint, "分页结果")
+    raw_records = page.get("records")
+    if not isinstance(raw_records, list) or not all(isinstance(item, dict) for item in raw_records):
+        raise FormulaApiError(endpoint, "分页 records 格式无效")
+    return [dict(item) for item in raw_records], page
+
+
+def _history_from_result(result: Any) -> tuple[dict[str, Any] | None, str | None]:
+    body = _require_dict(result, HISTORY_ENDPOINT, "用户结果")
+    history = body.get("history")
+    if history is not None and not isinstance(history, dict):
+        raise FormulaApiError(HISTORY_ENDPOINT, "history 格式无效")
+    qq = body.get("qq")
+    return (dict(history) if history is not None else None, str(qq) if qq else None)
+
+
+def _customer_id(history: dict[str, Any]) -> Any:
+    customer_id = history.get("customerId")
+    if not customer_id:
+        raise FormulaApiError(HISTORY_ENDPOINT, "history 缺少 customerId")
+    return customer_id
+
+
+def _rank_rule(history: dict[str, Any]) -> dict[str, Any]:
+    grade = _integer(history.get("grade"), -1)
+    if grade < 0 or grade >= len(MATCH_GRADES):
+        raise FormulaApiError(HISTORY_ENDPOINT, "段位编号超出范围")
+    return {
+        "rank": MATCH_GRADES[grade],
+        "round": PROMOTION_ROUNDS[grade] or None,
+        "value": PROMOTION_SUMS[grade] or None,
+        "avg": PROMOTION_AVERAGES[grade] or None,
+    }
+
+
+def _record_position(record: dict[str, Any], username: str) -> int | None:
+    normalized_name = username.strip()
+    for index in range(1, 5):
+        if str(record.get(f"name{index}") or "").strip() == normalized_name:
+            return index
+    return None
+
+
+def _legacy_point_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    converted: list[dict[str, Any]] = []
+    for record in records[:10]:
+        item = dict(record)
+        for index in range(1, 5):
+            item[f"point{index}"] = round(_number(record.get(f"point{index}")) * 100)
+        converted.append(item)
+    return converted
+
+
+def _legacy_tech_data(
+    history: dict[str, Any],
+    records: list[dict[str, Any]],
+) -> dict[str, Any]:
+    total = _integer(history.get("totalPosition"))
+    winner_points = [
+        _number(record.get("point1")) * 100
+        for record in records
+        if record.get("point1") is not None
+    ]
+    average_winner_point = (
+        sum(winner_points) / len(winner_points) if winner_points else 40000
     )
-    if any(ignored in text for ignored in ignored_errors):
-        logger.debug(f"忽略浏览器JS噪声: {text}")
-        return
-    logger.warning(f"浏览器JS错误: {text}")
+
+    return {
+        # 旧雷达图的火力是最近对局中一位终局点数的平均值。
+        "fire": average_winner_point,
+        "defense": _number(history.get("defense")),
+        "stabilize": _number(history.get("stability")),
+        "lucky": _number(history.get("fire"), 4),
+        # 新接口的平均得点以百点为单位，旧接口以 1000 为零点。
+        "tech": 1000 + _number(history.get("technique")) * 100,
+        "attack": _number(history.get("luck")),
+        "ratio1": _integer(history.get("position1")) / total if total else 0,
+        "ratio2": _integer(history.get("position2")) / total if total else 0,
+        "ratio3": _integer(history.get("position3")) / total if total else 0,
+        "ratio4": _integer(history.get("position4")) / total if total else 0,
+    }
+
+
+def _personal_render_context(
+    history: dict[str, Any],
+    records: list[dict[str, Any]],
+) -> dict[str, Any]:
+    customer_id = history.get("customerId")
+    name = history.get("name")
+    if not customer_id or not name:
+        raise FormulaApiError(HISTORY_ENDPOINT, "history 缺少用户标识")
+
+    rank_rule = _rank_rule(history)
+    promotion_count = _integer(history.get("upPosition"))
+    rate_list_data = []
+    for record in records[:promotion_count]:
+        position = _record_position(record, str(name))
+        if position is not None:
+            rate_list_data.append(
+                {"createTime": record.get("logtime") or "", "sort": position}
+            )
+
+    return {
+        "username": str(name),
+        "basic_data": {
+            "id": customer_id,
+            "name": str(name),
+            "rateName": records[0].get("mahjongName") or history.get("rateName") or "-",
+            "allRankNum": history.get("nationaSort", "-"),
+            "rateRankNum": history.get("mahjongSort", "-"),
+            "totalRate": _integer(history.get("totalPosition")),
+            "rankRule": rank_rule,
+            "rate": history.get("rate", "-"),
+            "maxPoint": round(_number(history.get("maxPoint")) * 100),
+            "avgPoint": round(_number(history.get("avgPoint")) * 100),
+            "upAvgPosition": _number(history.get("upAvgPosition")),
+            "sumPosition": _integer(history.get("sumPosition")),
+        },
+        "tech_data": _legacy_tech_data(history, records),
+        "rateList_data": rate_list_data,
+        "ratePage_data": _legacy_point_records(records),
+    }
+
+
+def _hate_render_record(record: dict[str, Any], *, goodwill: bool) -> dict[str, Any]:
+    hate_value = _number(record.get("hateValue"))
+    return {
+        "name": record.get("opponentName") or "-",
+        "total": _integer(record.get("meetCount")),
+        "hatred": -hate_value if goodwill else hate_value,
+        "wincount": _integer(record.get("myWinCount")),
+        "winRate": _number(record.get("myWinRate")) / 100,
+        "opSort1": _integer(record.get("opponentPosition1")),
+        "opSort2": _integer(record.get("opponentPosition2")),
+        "opSort3": _integer(record.get("opponentPosition3")),
+        "opSort4": _integer(record.get("opponentPosition4")),
+        "opAvg": _number(record.get("opponentAvgPosition")),
+        "mySort1": _integer(record.get("myPosition1")),
+        "mySort2": _integer(record.get("myPosition2")),
+        "mySort3": _integer(record.get("myPosition3")),
+        "mySort4": _integer(record.get("myPosition4")),
+        "myAvg": _number(record.get("myAvgPosition")),
+    }
+
+
+def _rank_render_record(record: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "name": record.get("name") or "-",
+        "rankName": record.get("gradeText") or "-",
+        "rate": record.get("rate", "-"),
+        "rateName": record.get("mahjongName") or "-",
+        "avgPoint": round(_number(record.get("avgPoint")) * 100),
+        "upAvgPosition": _number(record.get("upAvgPosition")),
+        "upRate": _integer(record.get("upPosition")),
+        "totalRate": _integer(record.get("totalPosition")),
+        "position1": _integer(record.get("position1")),
+        "position2": _integer(record.get("position2")),
+        "position3": _integer(record.get("position3")),
+        "position4": _integer(record.get("position4")),
+    }
+
+
+def _run_sync(factory: Callable[[], Awaitable[T]]) -> T:
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(factory())
+
+    result: list[T] = []
+    error: list[BaseException] = []
+
+    def run() -> None:
+        try:
+            result.append(asyncio.run(factory()))
+        except BaseException as exc:
+            error.append(exc)
+
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+    thread.join()
+    if error:
+        raise error[0]
+    return result[0]
+
 
 async def convert_html_to_pic(content: str) -> BytesIO:
-    try:
-        result = await html_to_pic(html=content, type="jpeg", quality=70, device_scale_factor=2, wait=1000) 
-    except Exception as e:
-        logger.debug(e)
-        raise e
-    return result
-
-async def convert_html_to_pic2(content: str) -> BytesIO:
-    return await html_to_pic(
+    result = await html_to_pic(
         html=content,
         type="jpeg",
         quality=70,
         device_scale_factor=2,
         wait=1000,
     )
+    return result if isinstance(result, BytesIO) else BytesIO(result)
+
 
 async def convert_html_to_pic_with_chart_wait(
     content: str,
     canvas_ids: list[str],
     max_wait: int = 5000,
 ) -> BytesIO:
-    """渲染 HTML 到图片，等待所有指定 canvas 绘制完成后再截图。
-
-    所有 JS/CSS 资源已内联在 HTML 中，Tailwind 已预编译为静态 CSS，
-    无需 JIT 运行时，截图时布局确定性有保障。
-    """
     from nonebot_plugin_htmlrender.browser import get_new_page
 
     async with get_new_page(2, viewport={"width": 1280, "height": 10}) as page:
-        page.on("console", lambda msg: logger.debug(f"浏览器控制台: {msg.text}"))
+        page.on("console", lambda message: logger.debug(f"浏览器控制台: {message.text}"))
         page.on("pageerror", _handle_browser_page_error)
-        await page.goto("file:///")  # 使用 file:// origin，与 htmlrender 标准做法一致
+        await page.goto("file:///")
         await page.set_content(content, wait_until="load")
-        await page.wait_for_timeout(500)  # CSS 已预编译为静态文件，只需等待解析完成
-
+        await page.wait_for_timeout(500)
         try:
             await page.wait_for_function(
                 "() => window.__chartsReady === true",
                 timeout=max_wait,
             )
-            await page.wait_for_timeout(200)  # 确保 rAF 回调中的 resize() 完全执行
+            await page.wait_for_timeout(200)
         except Exception:
             logger.warning(f"图表等待超时 ({max_wait}ms)，继续截图")
             await page.wait_for_timeout(1000)
@@ -140,12 +341,17 @@ async def convert_html_to_pic_with_chart_wait(
             })""",
             canvas_ids,
         )
-
-        return await page.screenshot(
-            full_page=True,
-            type="jpeg",
-            quality=70,
+        return BytesIO(
+            await page.screenshot(full_page=True, type="jpeg", quality=70)
         )
+
+
+def _handle_browser_page_error(error: object) -> None:
+    text = str(error)
+    if "start is not defined" in text or "addRow is not defined" in text:
+        logger.debug(f"忽略浏览器JS噪声: {text}")
+        return
+    logger.warning(f"浏览器JS错误: {text}")
 
 
 class GszService:
@@ -153,28 +359,29 @@ class GszService:
     ratedata_manager = Ratedata_manager()
 
     @staticmethod
-    def exist_gsz_user(username: str) -> bool:
-        timeout_config = httpx.Timeout(30.0, connect=15.0, read=15.0)
-        try:
-            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}&mobile=', timeout=timeout_config).json()
-            if basic_data['code'] != 200:
-                raise Exception("获取basic_data失败")
-        except Exception as e:
-            logger.debug(f"API请求失败：{e}")
-            raise
+    async def _get_history(username: str, client: FormulaApiClient) -> tuple[dict[str, Any] | None, str | None]:
+        result = await client.get(HISTORY_ENDPOINT, params={"name": username})
+        return _history_from_result(result)
 
-        if basic_data['data'] == "":
-            return False
-        return True
-    
+    @staticmethod
+    async def _exist_gsz_user(username: str) -> bool:
+        async with FormulaApiClient() as client:
+            history, _ = await GszService._get_history(username, client)
+            return history is not None
+
+    @staticmethod
+    def exist_gsz_user(username: str) -> bool:
+        return _run_sync(lambda: GszService._exist_gsz_user(username))
+
     @staticmethod
     async def bind_userinfo(uid: str, username: str) -> bool:
-        if not GszService.exist_gsz_user(username):
+        async with FormulaApiClient() as client:
+            history, _ = await GszService._get_history(username, client)
+        if history is None:
             return False
-        userdata_manager = GszService.userdata_manager
         try:
             await asyncio.to_thread(
-                userdata_manager.update_userdata,
+                GszService.userdata_manager.update_userdata,
                 [{"uid": uid, "username": username}],
             )
         except sqlite3.Error:
@@ -184,200 +391,190 @@ class GszService:
 
     @staticmethod
     async def get_userinfo_by_uid(uid: str) -> str | None:
-        userdata_manager = GszService.userdata_manager
         try:
-            userdata_list = await asyncio.to_thread(userdata_manager.get_userdata, [uid])
+            users = await asyncio.to_thread(GszService.userdata_manager.get_userdata, [uid])
         except sqlite3.Error:
             logger.warning("get_userinfo_by_uid: DB read failed", exc_info=True)
             return None
-        logger.warning(f"[diag] get_userinfo_by_uid uid={uid!r} -> {len(userdata_list)} rows, _initialized={userdata_manager._initialized}")
-        if len(userdata_list) == 0:
-            return None
-        return userdata_list[0]["username"]
+        return users[0]["username"] if users else None
 
     @staticmethod
     async def get_userinfo_by_name(username: str) -> BytesIO:
-        logger.debug(f"开始获取用户信息: {username}")
-        timeout_config = httpx.Timeout(30.0, connect=15.0, read=15.0)
-        logger.debug(f"设置请求超时时间: {timeout_config}")
-        try:
-            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}&mobile=', timeout=timeout_config).json()
-            if basic_data['code'] != 200:
-                raise Exception("获取basic_data失败")
-            custom_id= basic_data['data']['id']
-            qq = basic_data['data']['qq']
-            tech_data = httpx.post(API_ENDPOINTS["tech"] + f'?customerId={custom_id}', timeout=timeout_config).json()
-            if tech_data['code'] != 200:
-                raise Exception("获取tech_data失败")
-            rateList_data = httpx.post(API_ENDPOINTS["customerRateList"] + f'?customerId={custom_id}', timeout=timeout_config).json()
-            if rateList_data['code'] != 200:
-                raise Exception("获取rateList_data失败")
-            ratePage_data = httpx.post(API_ENDPOINTS["customerRatePage"] + f'?customerId={custom_id}&pageNo=1&pageSize=10', timeout=timeout_config).json()
-            if ratePage_data['code'] != 200:
-                raise Exception("获取ratePage_data失败")
-        except Exception as e:
-            logger.debug(f"API请求失败：{e}")
-            raise
-
-        logger.debug(f"获取用户信息: {username}({qq})")
-        raw_pic = httpx.get(f'https://q.qlogo.cn/headimg_dl?dst_uin={qq}&spec=640&img_type=jpg').content
-
-        template = jinja_env.get_template('gsz_info.html')
-        content = template.render(
-            **_render_style_context(),
-            chart_js_content=_read_static('chart.js'),
-            username=username,
-            userpic=base64.b64encode(raw_pic).decode("utf-8"),
-            basic_data=basic_data["data"],
-            tech_data=tech_data["data"],
-            rateList_data=rateList_data["data"],
-            ratePage_data=ratePage_data["data"]["records"]
+        async with FormulaApiClient() as client:
+            history, qq = await GszService._get_history(username, client)
+            if history is None:
+                raise FormulaApiError(HISTORY_ENDPOINT, "用户不存在")
+            customer_id = _customer_id(history)
+            rank_rule = _rank_rule(history)
+            page_size = max(10, rank_rule["round"] or 50)
+            records_result = await client.get(
+                RECORDS_ENDPOINT,
+                params={"customerId": customer_id, "pageNo": 1, "pageSize": page_size},
             )
-        logger.debug(f"渲染模板内容: {content[:100]}...")  # 仅打印前100个字符以避免过长输出
-        pic = await convert_html_to_pic_with_chart_wait(
-            content=content,
-            canvas_ids=["radarChart", "doughnutChart", "rankTrendChart"],
-            max_wait=5000,
+            records, _ = _records(records_result, RECORDS_ENDPOINT)
+
+            avatar = None
+            if qq:
+                try:
+                    response = await client._http.get(
+                        "https://q.qlogo.cn/headimg_dl",
+                        params={"dst_uin": qq, "spec": 640, "img_type": "jpg"},
+                    )
+                    response.raise_for_status()
+                    if response.content:
+                        avatar = base64.b64encode(response.content).decode("ascii")
+                except httpx.HTTPError:
+                    logger.debug("公式战头像获取失败")
+
+        render_context = _personal_render_context(history, records)
+        content = jinja_env.get_template("gsz_info.html").render(
+            **_render_style_context(),
+            chart_js_content=_read_static("chart.js"),
+            userpic=avatar or "",
+            **render_context,
         )
-        logger.debug(f"获取用户信息图片: {username}({qq})")
-        
-        return pic
+        return await convert_html_to_pic_with_chart_wait(
+            content,
+            ["radarChart", "doughnutChart", "rankTrendChart"],
+        )
+
+    @staticmethod
+    async def _partner_page(
+        client: FormulaApiClient,
+        customer_id: Any,
+        page_no: int,
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        result = await client.get(
+            PARTNER_STATS_ENDPOINT,
+            params={"customerId": customer_id, "pageNo": page_no, "pageSize": 10},
+        )
+        return _records(result, PARTNER_STATS_ENDPOINT)
 
     @staticmethod
     async def get_rank_top(username: str) -> BytesIO:
-        timeout_config = httpx.Timeout(30.0, connect=15.0, read=15.0)
-        try:
-            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}', timeout=timeout_config).json()
-            if basic_data['code'] != 200:
-                raise Exception("获取basic_data失败")
-            custom_id= basic_data['data']['id']
-            hate_data_top = httpx.post(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo=1&pageSize=10', timeout=timeout_config).json()
-            if hate_data_top['code'] != 200:
-                raise Exception("获取hate_data_top失败")
-        except Exception as e:
-            print(e)
-            raise e
-        
-        template = jinja_env.get_template('hate.html')
-        content = template.render(
+        async with FormulaApiClient() as client:
+            history, _ = await GszService._get_history(username, client)
+            if history is None:
+                raise FormulaApiError(HISTORY_ENDPOINT, "用户不存在")
+            records, _ = await GszService._partner_page(client, _customer_id(history), 1)
+        content = jinja_env.get_template("hate.html").render(
             **_render_style_context(),
             flag=0,
             username=username,
-            hate_data=hate_data_top["data"]["records"]
-            )
-        pic = await convert_html_to_pic(content=content)
-
-        return pic
+            hate_data=[
+                _hate_render_record(record, goodwill=False)
+                for record in records[:10]
+            ],
+        )
+        return await convert_html_to_pic(content)
 
     @staticmethod
     async def get_rank_last(username: str) -> BytesIO:
-        timeout_config = httpx.Timeout(30.0, connect=15.0, read=15.0)
-        try:
-            basic_data = httpx.post(API_ENDPOINTS["basic"] + f'?name={username}', timeout=timeout_config).json()
-            if basic_data['code'] != 200:
-                raise Exception("获取basic_data失败")
-            custom_id= basic_data['data']['id']
-            hate_data= httpx.post(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo=1&pageSize=10', timeout=timeout_config).json()
-            if hate_data['code'] != 200:
-                raise Exception("获取hate_data失败")
-            pageNo = hate_data["data"]["pages"]
-            hate_data = httpx.post(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo={pageNo}&pageSize=10', timeout=timeout_config).json()
-            if hate_data['code'] != 200:
-                raise Exception("获取hate_data_last_page失败")
-            hate_data_last = hate_data["data"]["records"]
-            hate_data = httpx.post(API_ENDPOINTS["hate"] + f'?customerId={custom_id}&pageNo={pageNo-1}&pageSize=10', timeout=timeout_config).json()
-            if hate_data['code'] != 200:
-                raise Exception("获取hate_data_last_page-1失败")
-            hate_data_last = hate_data["data"]["records"] + hate_data_last
-            if len(hate_data_last) > 10:
-                hate_data_last = hate_data_last[-10:]
-            for i in range(len(hate_data_last)):
-                hate_data_last[i]["hatred"] = -hate_data_last[i]["hatred"]
-            hate_data_last = sorted(hate_data_last, key=lambda x: x["hatred"], reverse=True)
+        async with FormulaApiClient() as client:
+            history, _ = await GszService._get_history(username, client)
+            if history is None:
+                raise FormulaApiError(HISTORY_ENDPOINT, "用户不存在")
+            first_records, first_page = await GszService._partner_page(
+                client, _customer_id(history), 1
+            )
+            total = _integer(first_page.get("total"), len(first_records))
+            page_size = max(1, _integer(first_page.get("size") or first_page.get("pageSize"), 10))
+            pages = _integer(first_page.get("pages"), math.ceil(total / page_size) if total else 0)
+            if pages <= 1:
+                records = first_records
+            else:
+                records = []
+                for page_no in sorted({pages - 1, pages}):
+                    page_records, _ = await GszService._partner_page(
+                        client, _customer_id(history), page_no
+                    )
+                    records.extend(page_records)
 
-        except Exception as e:
-            print(e)
-            raise e
-        
-        template = jinja_env.get_template('hate.html')
-        content = template.render(
+        selected = sorted(records, key=lambda item: _number(item.get("hateValue")))[:10]
+        content = jinja_env.get_template("hate.html").render(
             **_render_style_context(),
             flag=1,
             username=username,
-            hate_data=hate_data_last
-            )
-        pic = await convert_html_to_pic(content=content)
+            hate_data=[
+                _hate_render_record(record, goodwill=True)
+                for record in selected
+            ],
+        )
+        return await convert_html_to_pic(content)
 
-        return pic
-    
+    @staticmethod
+    async def _get_rate_id(rate_name: str) -> str | None:
+        try:
+            async with FormulaApiClient() as client:
+                result = await client.get(
+                    MAHJONG_LIST_ENDPOINT,
+                    params={
+                        "pageNo": 1,
+                        "pageSize": 9,
+                        "keyword": rate_name,
+                        "provinceName": "全国",
+                    },
+                )
+            records, _ = _records(result, MAHJONG_LIST_ENDPOINT)
+        except FormulaApiError:
+            logger.debug("公式战雀庄搜索失败")
+            return None
+        if not records:
+            return None
+        match = next((item for item in records if item.get("name") == rate_name), records[0])
+        rate_id = match.get("id")
+        return str(rate_id) if rate_id is not None else None
+
     @staticmethod
     def get_rate_id(rate_name: str) -> str | None:
-        timeout_config = httpx.Timeout(30.0, connect=15.0, read=15.0)
-        try:
-            rate_data = httpx.post(API_ENDPOINTS["rateList"] + f'?&pageNo=1&pageSize=9&name={rate_name}&areaName=&province=&city=', timeout=timeout_config).json()
-            if rate_data['code'] != 200:
-                raise Exception("获取rate_data失败")
-        except Exception as e:
-            print(e)
-            return None
-        
-        if len(rate_data["data"]["records"]) == 0:
-            return None
-        return rate_data["data"]["records"][0]["id"]
-    
+        return _run_sync(lambda: GszService._get_rate_id(rate_name))
+
     @staticmethod
     def exist_rate(rate_name: str) -> bool:
         return GszService.get_rate_id(rate_name) is not None
-        
+
     @staticmethod
     async def get_rateinfo_by_group_id(group_id: str) -> object | None:
-        ratedata_manager = GszService.ratedata_manager
         try:
-            ratedata_list = await asyncio.to_thread(ratedata_manager.get_ratedata, [group_id])
+            rates = await asyncio.to_thread(GszService.ratedata_manager.get_ratedata, [group_id])
         except sqlite3.Error:
             logger.warning("get_rateinfo_by_group_id: DB read failed", exc_info=True)
             return None
-        if len(ratedata_list) == 0:
-            return None
-        return ratedata_list[0]
+        return rates[0] if rates else None
 
     @staticmethod
     async def bind_rateinfo(group_id: str, rate_name: str) -> bool:
-        if not GszService.exist_rate(rate_name):
-            return False
-        ratedata_manager = GszService.ratedata_manager
-        rate_id = GszService.get_rate_id(rate_name)
+        rate_id = await GszService._get_rate_id(rate_name)
         if rate_id is None:
             return False
         try:
             await asyncio.to_thread(
-                ratedata_manager.update_ratedata,
+                GszService.ratedata_manager.update_ratedata,
                 [{"groupId": group_id, "rateId": rate_id, "rateName": rate_name}],
             )
         except sqlite3.Error:
             logger.warning("bind_rateinfo: DB update failed", exc_info=True)
             return False
         return True
-    
+
     @staticmethod
     async def get_rank_list(rate_id: str) -> BytesIO:
-        timeout_config = httpx.Timeout(30.0, connect=15.0, read=15.0)
-        try:
-            rank_data = httpx.post(API_ENDPOINTS["findRanking"] + f'?pageNo=1&pageSize=50&pid={rate_id}&sortField=rank&sortType=desc', timeout=timeout_config).json()
-            if rank_data['code'] != 200:
-                raise Exception("获取rank_data失败")
-        except Exception as e:
-            print(e)
-            raise e
-        
-        rank_data = rank_data["data"]["records"]
-
-        template = jinja_env.get_template('rank_list.html')
-        content = template.render(
+        async with FormulaApiClient() as client:
+            result = await client.get(
+                GRADE_RANK_ENDPOINT,
+                params={
+                    "mahjongId": rate_id,
+                    "scope": "mahjong",
+                    "pageNo": 1,
+                    "pageSize": 50,
+                    "orderColumns": "",
+                    "orderTypes": "",
+                },
+            )
+        records, _ = _records(result, GRADE_RANK_ENDPOINT)
+        rank_data = [_rank_render_record(record) for record in records[:50]]
+        content = jinja_env.get_template("rank_list.html").render(
             **_render_style_context(),
-            rank_data=rank_data
+            rank_data=rank_data,
         )
-
-        pic = await convert_html_to_pic(content=content)
-
-        return pic
+        return await convert_html_to_pic(content)

@@ -286,8 +286,6 @@ async def synchronize_command_panels(bot: QQBot) -> dict[PanelScope, str]:
 
 
 async def _sync_on_connect(bot: Bot) -> None:
-    # The plugin can be discovered while another adapter is selected, but it must
-    # never call QQ APIs for those bots.
     if (
         not isinstance(bot, QQBot)
         or bot.self_id in _synced_bot_ids

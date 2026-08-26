@@ -98,10 +98,10 @@
                             <td class="font-mono">{{ "%.2f"|format(record.upAvgPosition or 0) }}</td>
                             <td class="font-mono">{{ record.upRate or 0 }}</td>
                             <td>{{ record.totalRate }}</td>
-                            <td class="font-mono">{{ "%.1f"|format((record.position1 or 0) / record.totalRate * 100) }}%</td>
-                            <td class="font-mono">{{ "%.1f"|format((record.position2 or 0) / record.totalRate * 100) }}%</td>
-                            <td class="font-mono">{{ "%.1f"|format((record.position3 or 0) / record.totalRate * 100) }}%</td>
-                            <td class="font-mono">{{ "%.1f"|format((record.position4 or 0) / record.totalRate * 100) }}%</td>
+                            <td class="font-mono">{{ "%.1f"|format((record.position1 or 0) / record.totalRate * 100 if record.totalRate else 0) }}%</td>
+                            <td class="font-mono">{{ "%.1f"|format((record.position2 or 0) / record.totalRate * 100 if record.totalRate else 0) }}%</td>
+                            <td class="font-mono">{{ "%.1f"|format((record.position3 or 0) / record.totalRate * 100 if record.totalRate else 0) }}%</td>
+                            <td class="font-mono">{{ "%.1f"|format((record.position4 or 0) / record.totalRate * 100 if record.totalRate else 0) }}%</td>
                         </tr>
                         {% endfor %}
                     </tbody>

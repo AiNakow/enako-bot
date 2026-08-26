@@ -1,0 +1,129 @@
+{
+  "history": {
+    "history": {
+      "customerId": "customer-redacted",
+      "name": "测试玩家<安全>",
+      "grade": 8,
+      "rate": 1988,
+      "nationaSort": 123,
+      "mahjongSort": 4,
+      "totalPosition": 20,
+      "knockBackNum": 2,
+      "maxPoint": 512.3,
+      "avgPoint": 278.45,
+      "totalScore": 88.5,
+      "upPosition": 23,
+      "upAvgPosition": 2.31,
+      "sumPosition": 55,
+      "position1": 5,
+      "position2": 6,
+      "position3": 4,
+      "position4": 5,
+      "fire": 2.48,
+      "attack": 120,
+      "technique": 1.2,
+      "luck": 0.27,
+      "stability": 0.51,
+      "defense": 0.76
+    },
+    "qq": "100000000"
+  },
+  "records": {
+    "records": [
+      {
+        "id": "record-new",
+        "logtime": "2026-08-25 20:00:00",
+        "mahjongId": "mahjong-redacted",
+        "mahjongName": "测试雀庄",
+        "name1": "甲",
+        "point1": 401.2,
+        "name2": "测试玩家<安全>",
+        "point2": 300.5,
+        "name3": "乙",
+        "point3": 201.1,
+        "name4": "丙",
+        "point4": 97.2
+      },
+      {
+        "id": "record-old",
+        "logtime": "2026-08-24 20:00:00",
+        "mahjongId": "mahjong-redacted",
+        "mahjongName": "测试雀庄",
+        "name1": "测试玩家<安全>",
+        "point1": 455.55,
+        "name2": "甲",
+        "point2": 250,
+        "name3": "乙",
+        "point3": 200,
+        "name4": "丙",
+        "point4": 94.45
+      }
+    ],
+    "total": 2,
+    "pages": 1,
+    "current": 1,
+    "size": 10
+  },
+  "partners": {
+    "records": [
+      {
+        "opponentName": "对手甲",
+        "hateValue": 12.5,
+        "meetCount": 8,
+        "myWinCount": 3,
+        "myWinRate": 37.5,
+        "myPosition1": 3,
+        "myPosition2": 2,
+        "myPosition3": 2,
+        "myPosition4": 1,
+        "myAvgPosition": 2.13,
+        "opponentPosition1": 2,
+        "opponentPosition2": 2,
+        "opponentPosition3": 2,
+        "opponentPosition4": 2,
+        "opponentAvgPosition": 2.5
+      }
+    ],
+    "total": 1,
+    "pages": 1,
+    "current": 1,
+    "size": 10
+  },
+  "mahjong": {
+    "records": [
+      {"id": "mahjong-redacted", "name": "测试雀庄", "provinceName": "测试省"},
+      {"id": "mahjong-fuzzy", "name": "测试雀庄分店", "provinceName": "测试省"}
+    ],
+    "total": 2,
+    "pages": 1,
+    "current": 1,
+    "size": 9
+  },
+  "rank": {
+    "records": [
+      {
+        "rankNo": 1,
+        "customerId": "rank-customer-redacted",
+        "name": "榜首玩家",
+        "grade": 9,
+        "gradeText": "四段",
+        "mahjongId": "mahjong-redacted",
+        "mahjongName": "测试雀庄",
+        "rate": 2020,
+        "avgPoint": 301.25,
+        "totalScore": 99.5,
+        "upPosition": 20,
+        "upAvgPosition": 2.2,
+        "totalPosition": 0,
+        "position1": 0,
+        "position2": 0,
+        "position3": 0,
+        "position4": 0
+      }
+    ],
+    "total": 1,
+    "pages": 1,
+    "current": 1,
+    "size": 50
+  }
+}

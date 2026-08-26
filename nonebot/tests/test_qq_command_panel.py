@@ -15,7 +15,7 @@ try:
 except ValueError:
     nonebot.init()
 
-from src.plugins.qq_command_panel import (  # noqa: E402
+from src.qq_plugins.qq_command_panel import (  # noqa: E402
     PANEL_REMARK,
     _sync_on_connect,
     _sync_scope,
@@ -87,7 +87,7 @@ def test_connect_hook_ignores_non_qq_bots() -> None:
     synchronize = AsyncMock()
 
     with patch(
-        "src.plugins.qq_command_panel.synchronize_command_panels",
+        "src.qq_plugins.qq_command_panel.synchronize_command_panels",
         synchronize,
     ):
         asyncio.run(_sync_on_connect(object()))  # type: ignore[arg-type]
@@ -107,7 +107,7 @@ def test_sync_scope_creates_panel_when_global_panel_is_missing() -> None:
     ]
     bot = object()
 
-    with patch("src.plugins.qq_command_panel._request_panel_api", request):
+    with patch("src.qq_plugins.qq_command_panel._request_panel_api", request):
         result = asyncio.run(
             _sync_scope(bot, "group", items)  # type: ignore[arg-type]
         )
@@ -146,7 +146,7 @@ def test_sync_scope_updates_existing_global_panel() -> None:
     ]
     bot = object()
 
-    with patch("src.plugins.qq_command_panel._request_panel_api", request):
+    with patch("src.qq_plugins.qq_command_panel._request_panel_api", request):
         result = asyncio.run(
             _sync_scope(bot, "group", items)  # type: ignore[arg-type]
         )
@@ -175,7 +175,7 @@ def test_sync_scope_skips_unchanged_panel() -> None:
             ]
         }
     )
-    with patch("src.plugins.qq_command_panel._request_panel_api", request):
+    with patch("src.qq_plugins.qq_command_panel._request_panel_api", request):
         result = asyncio.run(
             _sync_scope(object(), "group", items)  # type: ignore[arg-type]
         )

@@ -11,7 +11,7 @@ require("nonebot_plugin_waiter")
 from nonebot_plugin_waiter import waiter
 
 from typing import Annotated
-from src.plugins._adapter.runtime import bridge
+from src.infrastructure_plugins._adapter import bridge
 from .common import *
 from .config import Config
 from .service import MahjongService

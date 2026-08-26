@@ -52,7 +52,7 @@
 建议新增一个项目内部兼容层，例如：
 
 ```text
-nonebot/src/plugins/_adapter/
+nonebot/src/infrastructure_plugins/_adapter/
   __init__.py
   base.py
   qq.py
@@ -70,8 +70,9 @@ nonebot/src/plugins/_adapter/
   - 封装 OneBot v11 的事件判断、at 解析、图片消息构造。
 - `runtime.py`
   - 根据配置选择当前适配器实现。
+- 入口始终显式加载 `_adapter` 基础设施插件，不受业务插件白名单影响。
 - 业务插件
-  - 只导入 `_adapter.runtime` 或 `_adapter.base`，不直接导入具体适配器。
+  - 只导入 `infrastructure_plugins._adapter` 暴露的接口，不直接导入具体适配器。
 
 ## 兼容层接口建议
 
@@ -216,7 +217,7 @@ ONEBOT_ACCESS_TOKEN=xxx
 建议改成：
 
 ```python
-from src.plugins._adapter.runtime import bridge
+from src.infrastructure_plugins._adapter import bridge
 
 message = bridge.image_from_bytes(pic)
 url = bridge.extract_first_image_url(resp.get_message())
@@ -237,7 +238,7 @@ url = bridge.extract_first_image_url(resp.get_message())
 建议改成：
 
 ```python
-from src.plugins._adapter.runtime import bridge
+from src.infrastructure_plugins._adapter import bridge
 
 if bridge.is_group_event(event):
     at_list = bridge.get_mentioned_user_ids(event)
@@ -343,8 +344,8 @@ BOT_ADAPTER=onebot11 python bot.py
 还可以补一个轻量导入检查脚本，验证两个 bridge 都能导入：
 
 ```bash
-python -c "from src.plugins._adapter.qq import bridge"
-python -c "from src.plugins._adapter.onebot11 import bridge"
+python -c "from src.infrastructure_plugins._adapter.qq import bridge"
+python -c "from src.infrastructure_plugins._adapter.onebot11 import bridge"
 ```
 
 ### 第 7 步：部署双环境验证
@@ -376,15 +377,15 @@ python -c "from src.plugins._adapter.onebot11 import bridge"
 - 插件业务代码不得导入 `nonebot.adapters.onebot.v11`。
 - 具体适配器导入只能出现在：
   - `nonebot/bot.py`
-  - `nonebot/src/plugins/_adapter/qq.py`
-  - `nonebot/src/plugins/_adapter/onebot11.py`
+  - `nonebot/src/infrastructure_plugins/_adapter/qq.py`
+  - `nonebot/src/infrastructure_plugins/_adapter/onebot11.py`
 - 服务层，例如 `service.py`、`ratedata_manage.py`、`userdata_manage.py`，不得依赖 NoneBot 事件类型或消息段。
 - 图片渲染、OCR、数据读写、API 请求应保持完全适配器无关。
 
 可以用下面命令定期检查：
 
 ```bash
-rg "nonebot\\.adapters\\.(qq|onebot)" nonebot/src/plugins -g '!_adapter/**'
+rg "nonebot\\.adapters\\.(qq|onebot)" nonebot/src/plugins
 ```
 
 如果有输出，就说明业务插件又直接依赖了具体适配器。

@@ -16,7 +16,7 @@ from nonebot.plugin import PluginMetadata
 from nonebot.log import logger
 
 # 本地模块
-from src.plugins._adapter.runtime import bridge
+from src.infrastructure_plugins._adapter import bridge
 from .common import *
 from .config import Config
 from .service import GszService

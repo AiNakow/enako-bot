@@ -5,9 +5,16 @@ description = "enako-bot"
 readme = "README.md"
 requires-python = ">=3.8, <4.0"
 dependencies = [
+    "cryptography>=42.0.0",
     "nonebot-adapter-qq>=1.7.1",
     "nonebot-adapter-onebot>=2.4.0",
     "nonebot2[aiohttp,httpx]>=2.5.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
 ]
 
 [tool.nonebot]
@@ -17,3 +24,10 @@ adapters = [
 ]
 plugins = ["nonebot_plugin_htmlrender"]
 plugin_dirs = ["src/plugins"]
+
+[tool.pytest.ini_options]
+pythonpath = [".", "src"]
+markers = [
+    "live: requires explicitly enabled access to the real formula API",
+    "render: requires the installed Playwright Chromium browser",
+]

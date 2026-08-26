@@ -11,7 +11,6 @@ import time
 from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
-from urllib.parse import quote
 
 import httpx
 from cryptography.exceptions import InvalidTag
@@ -19,6 +18,12 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+
+BROWSER_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0"
+)
 
 
 class CryptoSessionError(Exception):
@@ -169,7 +174,7 @@ class EncryptedSessionClient:
             headers = {
                 "Content-Type": "application/json",
                 "Referer": "https://rmj.club/assets/responseCrypto.worker-AwEmsErt.js",
-                "User-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0"
+                "User-Agent": BROWSER_USER_AGENT,
             }
             if token:
                 headers["X-Access-Token"] = token
@@ -366,88 +371,3 @@ class EncryptedSessionClient:
                     if len(session.rid_order) > self.max_used_rids:
                         oldest_rid = session.rid_order.popleft()
                         session.used_rids.discard(oldest_rid)
-
-
-async def example() -> None:
-    """Minimal usage example; replace all placeholder values."""
-    username = quote("文奈雪舟")
-
-    async with EncryptedSessionClient(
-        # Must exactly equal the JavaScript variable r in e.encode(r).
-        hkdf_info="formula-response-encrypt-session-v1",
-    ) as client:
-        sid = await client.ensure_session(
-            endpoint="https://rmj.club/formula/security/crypto/session",
-            token="",
-        )
-        print("sid:", sid)
-
-        url = "https://rmj.club/formula/index/formula/customer/history?name=" + username
-
-        headers = {
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Encoding": "gzip, deflate, br, zstd",
-            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-            "Connection": "keep-alive",
-            "Host": "rmj.club",
-            "Referer": (
-                "https://rmj.club/browser/formulaCustomer"
-                "?name=" + username
-            ),
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-origin",
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0"
-            ),
-            "X-Crypto-Session": sid,
-            "sec-ch-ua": (
-                '"Not=A?Brand";v="99", '
-                '"Microsoft Edge";v="151", '
-                '"Chromium";v="151"'
-            ),
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": '"Windows"',
-        }
-
-        response = httpx.get(url, headers=headers)
-
-        print(response.status_code)
-
-        encrypted_response = response.json()
-        result = await client.decrypt_request(encrypted_response)
-        print(result)
-
-
-        customerId = result["result"]["history"]["customerId"]
-        url2 = httpx.URL(
-            "https://rmj.club/formula/index/formula/customer/partner-stats",
-            params={
-                "customerId": customerId,
-                "pageNo": 1,
-                "pageSize": 10
-            },
-        )
-        response = httpx.get(url2, headers=headers)
-        encrypted_response = response.json()
-        result = await client.decrypt_request(encrypted_response)
-        print(result)
-
-        url3 = httpx.URL(
-            "https://rmj.club/formula/index/formula/customer/records",
-            params={
-                "customerId": customerId,
-                "pageNo": 1,
-                "pageSize": 10
-            },
-        )
-        response = httpx.get(url3, headers=headers)
-        encrypted_response = response.json()
-        result = await client.decrypt_request(encrypted_response)
-        print(result)
-
-
-if __name__ == "__main__":
-    asyncio.run(example())
