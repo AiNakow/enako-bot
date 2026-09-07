@@ -7,8 +7,9 @@ import os
 import sqlite3
 import threading
 from collections.abc import Awaitable, Callable
+from dataclasses import asdict, dataclass
 from io import BytesIO
-from typing import Any, TypeVar
+from typing import Any, Literal, TypeVar
 
 import httpx
 from nonebot.log import logger
@@ -26,27 +27,36 @@ RECORDS_ENDPOINT = "/index/formula/customer/records"
 MAHJONG_LIST_ENDPOINT = "/index/formula/mahjong/list"
 GRADE_RANK_ENDPOINT = "/index/formula/rank/grade/grid"
 
-MATCH_GRADES = (
-    "新人",
-    "5级",
-    "4级",
-    "3级",
-    "2级",
-    "1级",
-    "初段",
-    "二段",
-    "三段",
-    "四段",
-    "五段",
-    "六段",
-    "七段",
-    "八段",
-    "九段",
-    "十段",
-)
-PROMOTION_ROUNDS = (7, 7, 10, 10, 12, 16, 16, 20, 25, 25, 30, 40, 45, 50, 0, 0)
-PROMOTION_SUMS = (20, 19, 27, 27, 31, 41, 40, 50, 60, 60, 69, 84, 90, 95, 0, 0)
-PROMOTION_AVERAGES = (2.9, 2.8, 2.7, 2.7, 2.6, 2.6, 2.5, 2.5, 2.4, 2.4, 2.3, 2.1, 2.0, 1.9, 0, 0)
+
+@dataclass(frozen=True)
+class GradeRule:
+    name: str
+    state: Literal["unranked", "promotable", "completed"]
+    rounds: int | None = None
+    position_sum: int | None = None
+    average: float | None = None
+
+
+# Keyed by the website's grade ID, not by array position.
+GRADE_RULES = {
+    0: GradeRule("无段位", "unranked"),
+    1: GradeRule("新人", "promotable", 7, 20, 2.9),
+    2: GradeRule("5级", "promotable", 7, 19, 2.8),
+    3: GradeRule("4级", "promotable", 10, 27, 2.7),
+    4: GradeRule("3级", "promotable", 10, 27, 2.7),
+    5: GradeRule("2级", "promotable", 12, 31, 2.6),
+    6: GradeRule("1级", "promotable", 16, 41, 2.6),
+    7: GradeRule("初段", "promotable", 16, 40, 2.5),
+    8: GradeRule("二段", "promotable", 20, 50, 2.5),
+    9: GradeRule("三段", "promotable", 25, 60, 2.4),
+    10: GradeRule("四段", "promotable", 25, 60, 2.4),
+    11: GradeRule("五段", "promotable", 30, 69, 2.3),
+    12: GradeRule("六段", "promotable", 40, 84, 2.1),
+    13: GradeRule("七段", "promotable", 45, 90, 2.0),
+    14: GradeRule("八段", "promotable", 50, 95, 1.9),
+    15: GradeRule("九段", "completed"),
+    16: GradeRule("十段", "completed"),
+}
 
 _static_cache: dict[str, str] = {}
 T = TypeVar("T")
@@ -108,16 +118,13 @@ def _customer_id(history: dict[str, Any]) -> Any:
     return customer_id
 
 
-def _rank_rule(history: dict[str, Any]) -> dict[str, Any]:
-    grade = _integer(history.get("grade"), -1)
-    if grade < 0 or grade >= len(MATCH_GRADES):
-        raise FormulaApiError(HISTORY_ENDPOINT, "段位编号超出范围")
-    return {
-        "rank": MATCH_GRADES[grade],
-        "round": PROMOTION_ROUNDS[grade] or None,
-        "value": PROMOTION_SUMS[grade] or None,
-        "avg": PROMOTION_AVERAGES[grade] or None,
-    }
+def _rank_rule(history: dict[str, Any]) -> GradeRule:
+    grade = history.get("grade")
+    if type(grade) is not int:
+        raise FormulaApiError(HISTORY_ENDPOINT, "段位编号必须为整数")
+    if grade not in GRADE_RULES:
+        raise FormulaApiError(HISTORY_ENDPOINT, f"未知段位编号：{grade}")
+    return GRADE_RULES[grade]
 
 
 def _record_position(record: dict[str, Any], username: str) -> int | None:
@@ -192,11 +199,11 @@ def _personal_render_context(
         "basic_data": {
             "id": customer_id,
             "name": str(name),
-            "rateName": records[0].get("mahjongName") or history.get("rateName") or "-",
+            "rateName": (records[0].get("mahjongName") if records else None) or history.get("rateName") or "-",
             "allRankNum": history.get("nationaSort", "-"),
             "rateRankNum": history.get("mahjongSort", "-"),
             "totalRate": _integer(history.get("totalPosition")),
-            "rankRule": rank_rule,
+            "rankRule": asdict(rank_rule),
             "rate": history.get("rate", "-"),
             "maxPoint": round(_number(history.get("maxPoint")) * 100),
             "avgPoint": round(_number(history.get("avgPoint")) * 100),
@@ -406,7 +413,7 @@ class GszService:
                 raise FormulaApiError(HISTORY_ENDPOINT, "用户不存在")
             customer_id = _customer_id(history)
             rank_rule = _rank_rule(history)
-            page_size = max(10, rank_rule["round"] or 50)
+            page_size = max(10, rank_rule.rounds) if rank_rule.state == "promotable" else 50
             records_result = await client.get(
                 RECORDS_ENDPOINT,
                 params={"customerId": customer_id, "pageNo": 1, "pageSize": page_size},

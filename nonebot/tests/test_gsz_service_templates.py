@@ -60,10 +60,11 @@ def test_personal_render_context_restores_legacy_fields_and_calculations(
 
     basic = context["basic_data"]
     assert basic["rankRule"] == {
-        "rank": "三段",
-        "round": 25,
-        "value": 60,
-        "avg": 2.4,
+        "name": "二段",
+        "state": "promotable",
+        "rounds": 20,
+        "position_sum": 50,
+        "average": 2.5,
     }
     assert basic["maxPoint"] == 51230
     assert basic["avgPoint"] == 27845
@@ -88,15 +89,65 @@ def test_personal_render_context_restores_legacy_fields_and_calculations(
     assert records == original
 
 
-def test_promotion_boundaries_and_invalid_grade(formula_fixture: dict[str, Any]) -> None:
-    history = formula_fixture["history"]["history"]
-    assert service._rank_rule({**history, "grade": 13}) == {
-        "rank": "八段", "round": 50, "value": 95, "avg": 1.9
-    }
-    assert service._rank_rule({**history, "grade": 14})["round"] is None
-    assert service._rank_rule({**history, "grade": 15})["round"] is None
+@pytest.mark.parametrize(
+    "grade, rank, rounds, total, average",
+    [
+        (0, "无段位", None, None, None),
+        (1, "新人", 7, 20, 2.9),
+        (2, "5级", 7, 19, 2.8),
+        (3, "4级", 10, 27, 2.7),
+        (4, "3级", 10, 27, 2.7),
+        (5, "2级", 12, 31, 2.6),
+        (6, "1级", 16, 41, 2.6),
+        (7, "初段", 16, 40, 2.5),
+        (8, "二段", 20, 50, 2.5),
+        (9, "三段", 25, 60, 2.4),
+        (10, "四段", 25, 60, 2.4),
+        (11, "五段", 30, 69, 2.3),
+        (12, "六段", 40, 84, 2.1),
+        (13, "七段", 45, 90, 2.0),
+        (14, "八段", 50, 95, 1.9),
+        (15, "九段", None, None, None),
+        (16, "十段", None, None, None),
+    ],
+)
+def test_current_grade_dictionary_and_promotion_rules(
+    grade: int, rank: str, rounds: int | None, total: int | None, average: float | None,
+) -> None:
+    state = "unranked" if grade == 0 else "completed" if grade in (15, 16) else "promotable"
+    assert service._rank_rule({"grade": grade}) == service.GradeRule(
+        rank, state, rounds, total, average,
+    )
+
+
+@pytest.mark.parametrize("grade", [-1, 17, None, "invalid", "8", 8.5, 8.0, True, False, [], {}])
+def test_invalid_grade_is_rejected(grade: Any) -> None:
     with pytest.raises(FormulaApiError, match="段位编号"):
-        service._rank_rule({**history, "grade": 16})
+        service._rank_rule({"grade": grade})
+
+
+@pytest.mark.parametrize("grade", [17, 8.5])
+def test_unknown_or_invalid_grade_stops_before_records_and_rendering(
+    formula_fixture: dict[str, Any], grade: Any,
+) -> None:
+    FakeFormulaClient.responses = {
+        service.HISTORY_ENDPOINT: {
+            "history": {**formula_fixture["history"]["history"], "grade": grade}, "qq": None,
+        },
+    }
+
+    async def scenario() -> None:
+        with (
+            patch.object(service, "FormulaApiClient", FakeFormulaClient),
+            patch.object(service, "convert_html_to_pic_with_chart_wait", AsyncMock()) as render,
+        ):
+            with pytest.raises(FormulaApiError, match="段位编号"):
+                await service.GszService.get_userinfo_by_name("玩家")
+            render.assert_not_awaited()
+        assert FakeFormulaClient.instance is not None
+        assert [call[0] for call in FakeFormulaClient.instance.calls] == [service.HISTORY_ENDPOINT]
+
+    asyncio.run(scenario())
 
 
 def test_legacy_tech_data_handles_empty_totals_and_records() -> None:
@@ -266,7 +317,7 @@ def test_user_image_avatar_failure_uses_placeholder(formula_fixture: dict[str, A
         assert 'src="data:image/png;base64,"' in html
         assert "测试玩家\\u003c安全\\u003e" in html
         assert AvatarFailureClient.instance is not None
-        assert AvatarFailureClient.instance.calls[1][1]["pageSize"] == 25
+        assert AvatarFailureClient.instance.calls[1][1]["pageSize"] == 20
 
     asyncio.run(scenario())
 
@@ -338,7 +389,8 @@ def test_hate_top_renders_first_ten_and_missing_user(formula_fixture: dict[str, 
         html = render.await_args.args[0]
         assert "对手9" in html and "对手10" not in html
         assert "37.5%" in html
-        assert "12.5" in html
+        assert ">12<" in "".join(html.split())
+        assert ">12.5<" not in "".join(html.split())
         assert "3" in html
         with patch.object(service.GszService, "_get_history", AsyncMock(return_value=(None, None))):
             with pytest.raises(FormulaApiError, match="用户不存在"):
@@ -437,6 +489,17 @@ def test_bind_rate_queries_once_and_preserves_database_shape() -> None:
     asyncio.run(scenario())
 
 
+@pytest.mark.parametrize("goodwill, hate_value, expected", [(False, 12.5, 12), (True, -12.5, 12)])
+def test_partner_values_render_as_integers(goodwill: bool, hate_value: float, expected: int) -> None:
+    record = service._hate_render_record({"hateValue": hate_value}, goodwill=goodwill)
+    assert type(record["hatred"]) is int
+    assert record["hatred"] == expected
+    html = service.jinja_env.get_template("hate.html").render(
+        **service._render_style_context(), flag=int(goodwill), username="玩家", hate_data=[record],
+    )
+    assert f">{expected}<" in "".join(html.split())
+
+
 def test_goodwill_uses_last_two_pages_and_lowest_hate_values() -> None:
     pages = {
         1: {"records": [{"opponentName": "top", "hateValue": 100}], "total": 25, "pages": 3, "size": 10},
@@ -533,6 +596,63 @@ def test_public_interface_signatures_and_async_forms() -> None:
 
 
 @pytest.mark.render
+@pytest.mark.parametrize("grade, rank", [(0, "无段位"), (8, "二段"), (14, "八段"), (15, "九段"), (16, "十段")])
+@pytest.mark.parametrize("empty_records", [False, True])
+def test_personal_grade_service_to_browser(
+    formula_fixture: dict[str, Any], grade: int, rank: str, empty_records: bool,
+) -> None:
+    from playwright.async_api import async_playwright
+
+    history = {**formula_fixture["history"]["history"], "grade": grade}
+    FakeFormulaClient.responses = {
+        service.HISTORY_ENDPOINT: {"history": history, "qq": None},
+        service.RECORDS_ENDPOINT: {
+            **formula_fixture["records"],
+            "records": [] if empty_records else formula_fixture["records"]["records"],
+        },
+    }
+
+    async def render_and_check(content: str, canvas_ids: list[str]) -> BytesIO:
+        async with async_playwright() as playwright:
+            browser = await playwright.chromium.launch()
+            page = await browser.new_page(viewport={"width": 1280, "height": 1080})
+            errors = []
+            page.on("pageerror", lambda error: errors.append(str(error)))
+            await page.set_content(content, wait_until="load")
+            await page.wait_for_function("window.__chartsReady === true")
+            text = await page.locator("body").inner_text()
+            assert rank in text
+            assert "NaN" not in text and "undefined" not in text
+            assert not errors
+            if grade == 0:
+                assert "升段条件" not in text and "成功通关" not in text
+                assert "当前均顺" not in text and "顺位之和" not in text
+            elif grade in (15, 16):
+                assert "成功通关" in text
+            else:
+                assert "成功通关" not in text
+                average, total = (2.5, 50) if grade == 8 else (1.9, 95)
+                assert f"（≤{average}）可升段" in text
+                assert f"（≤{total}）可升段" in text
+            output = BytesIO(await page.screenshot(type="jpeg", full_page=True))
+            await browser.close()
+            return output
+
+    async def scenario() -> BytesIO:
+        with (
+            patch.object(service, "FormulaApiClient", FakeFormulaClient),
+            patch.object(service, "convert_html_to_pic_with_chart_wait", render_and_check),
+        ):
+            return await service.GszService.get_userinfo_by_name(history["name"])
+
+    image = Image.open(asyncio.run(scenario()))
+    image.verify()
+    assert image.format == "JPEG"
+    assert FakeFormulaClient.instance is not None
+    assert FakeFormulaClient.instance.calls[1][1]["pageSize"] == (20 if grade == 8 else 50)
+
+
+@pytest.mark.render
 def test_four_template_render_chains_produce_nonempty_jpegs(formula_fixture: dict[str, Any]) -> None:
     context = service._personal_render_context(
         formula_fixture["history"]["history"],
@@ -618,3 +738,20 @@ def test_formula_api_and_four_images_live_smoke() -> None:
         image = Image.open(output)
         image.verify()
         assert image.format == "JPEG"
+
+
+@pytest.mark.live
+def test_grade_dictionary_matches_website() -> None:
+    if os.getenv("GSZ_RUN_LIVE_TESTS") != "1":
+        pytest.skip("set GSZ_RUN_LIVE_TESTS=1 to verify the website grade dictionary")
+
+    async def scenario() -> None:
+        async with service.FormulaApiClient() as client:
+            result = await client.get("/sys/dictType/getDict/match_grades")
+        items = result["items"]
+        actual = {int(item["value"]): item["text"] for item in items}
+        assert len(actual) == len(items), "网站段位字典包含重复编号"
+        expected = {grade: rule.name for grade, rule in service.GRADE_RULES.items()}
+        assert actual == expected, "网站段位字典已变化，请同时核对段位名称和前端升段门槛"
+
+    asyncio.run(scenario())

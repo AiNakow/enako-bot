@@ -15,7 +15,7 @@ INFRASTRUCTURE_PLUGINS = {
 }
 
 QQ_INFRASTRUCTURE_PLUGINS = {
-    "_qq_command_panel": "src.qq_plugins.qq_command_panel",
+    "qq_command_panel": "src.infrastructure_plugins.qq_command_panel",
 }
 
 def _discover_plugins(plugin_dir: str) -> dict[str, str]:

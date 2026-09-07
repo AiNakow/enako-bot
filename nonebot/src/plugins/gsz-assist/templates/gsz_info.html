@@ -237,7 +237,7 @@
             document.querySelector('p:has(.text-blue-500) span:last-child').textContent = `总局数：${data.totalRate}`;
             
             // 更新段位信息
-            document.querySelector('.card .text-center .text-4xl.font-bold').textContent = data.rankRule.rank;
+            document.querySelector('.card .text-center .text-4xl.font-bold').textContent = data.rankRule.name;
             document.querySelector('.card .text-center .text-xl').textContent = `RATE #${data.rate}`;
 
             // 更新数据预览
@@ -251,11 +251,18 @@
             const conditionDiv = document.querySelector('.bg-\\[\\#1e40af\\]');
             const conditionElements = conditionDiv.querySelectorAll('p');
 
-            if (data.rankRule.round === null){
+            if (data.rankRule.state === "unranked") {
+                statElements[2].parentElement.hidden = true;
+                statElements[3].parentElement.hidden = true;
+                conditionDiv.hidden = true;
+            }
+            else if (data.rankRule.state === "completed"){
                 const recentGames = rateListData
                     .sort((a, b) => new Date(a.createTime) - new Date(b.createTime))
                     .map(game => parseInt(game.sort));
-                statElements[2].textContent = recentGames.reduce((sum, pos) => sum + pos, 0) / recentGames.length;
+                statElements[2].textContent = recentGames.length
+                    ? recentGames.reduce((sum, pos) => sum + pos, 0) / recentGames.length
+                    : '-';
                 statElements[3].textContent = recentGames.reduce((sum, pos) => sum + pos, 0);
                 const fastestConditionText = `🔹 当前最快的升段条件是：恭喜你成功通关！`;
                 const relaxedConditionText = `🔹 当前最宽松升段条件是：恭喜你成功通关！`;
@@ -267,12 +274,12 @@
                 const avgPositionElement = statElements[2];
                 avgPositionElement.textContent = data.upAvgPosition.toFixed(2);
                 avgPositionElement.insertAdjacentHTML('afterend', 
-                    `<div class="text-xs text-gray-500">（≤${data.rankRule.avg}）可升段</div>`
+                    `<div class="text-xs text-gray-500">（≤${data.rankRule.average}）可升段</div>`
                 );
                 const sumPositionElement = statElements[3];
                 sumPositionElement.textContent = data.sumPosition;
                 sumPositionElement.insertAdjacentHTML('afterend', 
-                    `<div class="text-xs text-gray-500">（≤${data.rankRule.value}）可升段</div>`
+                    `<div class="text-xs text-gray-500">（≤${data.rankRule.position_sum}）可升段</div>`
                 );
 
                 // 获取最近的对局顺位数据
@@ -280,9 +287,9 @@
                     .sort((a, b) => new Date(a.createTime) - new Date(b.createTime))
                     .map(game => parseInt(game.sort));
 
-                const requiredGames = data.rankRule.round; // 需要的总局数
-                const maxAllowedSum = data.rankRule.value; // 允许的最大顺位和
-                const avgPosition = parseFloat(data.rankRule.avg); // 平均顺位要求
+                const requiredGames = data.rankRule.rounds; // 需要的总局数
+                const maxAllowedSum = data.rankRule.position_sum; // 允许的最大顺位和
+                const avgPosition = parseFloat(data.rankRule.average); // 平均顺位要求
 
                 let neededGames = 0, targetSum;
 
@@ -596,7 +603,8 @@
         // 更新顺位数据
         function updateRankHistory(rateListData, basicData) {
             const rankGroupsElement = document.getElementById('rankGroups');
-            const rankRound = basicData.rankRule.round;
+            const rankRound = basicData.rankRule.state === "promotable"
+                ? basicData.rankRule.rounds : null;
             // 处理最近顺位数据
             const recentRanks = rateListData
                 .sort((a, b) => new Date(a.createTime) - new Date(b.createTime)) // 按时间升序排序

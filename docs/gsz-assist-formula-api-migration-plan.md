@@ -30,15 +30,37 @@
 - 排行榜：`gradeText/mahjongName/rate/avgPoint/upPosition/upAvgPosition/totalPosition/position1..4`。
 - 新接口点数以百点为单位；个人最高点、平均点、对局点数及排行榜平均点在展示时乘以 `100`。
 
-段位名称使用已确认的 `match_grades` 映射，从“新人”到“十段”。升段规则采用当前官方前端口径：
+段位名称、升段局数、顺位和及均顺统一维护在 `service.py` 的 `GRADE_RULES` 中，以网站 `grade` 编号显式索引，每项为不可变的 `GradeRule`。不再维护四个按下标关联的数组。
 
-```text
-局数：[7, 7, 10, 10, 12, 16, 16, 20, 25, 25, 30, 40, 45, 50, 0, 0]
-顺位和：[20, 19, 27, 27, 31, 41, 40, 50, 60, 60, 69, 84, 90, 95, 0, 0]
-均顺：[2.9, 2.8, 2.7, 2.7, 2.6, 2.6, 2.5, 2.5, 2.4, 2.4, 2.3, 2.1, 2.0, 1.9, 0, 0]
+| grade | 名称 | 状态 | 局数 | 顺位和 | 均顺 |
+|---|---|---|---|---|---|
+| 0 | 无段位 | unranked | — | — | — |
+| 1 | 新人 | promotable | 7 | 20 | 2.9 |
+| 2 | 5级 | promotable | 7 | 19 | 2.8 |
+| 3 | 4级 | promotable | 10 | 27 | 2.7 |
+| 4 | 3级 | promotable | 10 | 27 | 2.7 |
+| 5 | 2级 | promotable | 12 | 31 | 2.6 |
+| 6 | 1级 | promotable | 16 | 41 | 2.6 |
+| 7 | 初段 | promotable | 16 | 40 | 2.5 |
+| 8 | 二段 | promotable | 20 | 50 | 2.5 |
+| 9 | 三段 | promotable | 25 | 60 | 2.4 |
+| 10 | 四段 | promotable | 25 | 60 | 2.4 |
+| 11 | 五段 | promotable | 30 | 69 | 2.3 |
+| 12 | 六段 | promotable | 40 | 84 | 2.1 |
+| 13 | 七段 | promotable | 45 | 90 | 2.0 |
+| 14 | 八段 | promotable | 50 | 95 | 1.9 |
+| 15 | 九段 | completed | — | — | — |
+| 16 | 十段 | completed | — | — | — |
+
+状态明确控制展示和查询窗口：`unranked` 隐藏升段指标及条件；`promotable` 按对应门槛计算；`completed` 显示通关。无门槛状态（无段位、已通关）查询最近 50 场；有门槛时按升段局数查询，至少 10 场。模板不再凭编号或门槛为空判断通关。未知编号、非整数编号直接抛出 API 错误，不猜测或截断编号。
+
+正常查询使用本地规则表，不额外请求字典。独立真实接口测试 `test_grade_dictionary_matches_website` 调用 `GET /sys/dictType/getDict/match_grades`，解密后将 `result.items` 的 `value/text` 与本地编号、名称完整比较，发现新增、删除、改名或重复编号即失败。该接口不包含升段门槛，因此测试通过不代表门槛未变化；门槛仍需对照网站个人战绩页前端确认，更新时一并修改规则表和测试。
+
+在 `nonebot` 目录运行字典一致性检查（需要网络，不需要用户名）：
+
+```bash
+GSZ_RUN_LIVE_TESTS=1 .venv/bin/python -m pytest tests/test_gsz_service_templates.py -k grade_dictionary_matches_website -q
 ```
-
-九段、十段按已通关展示，不继续计算旧版“最快/最宽松升段条件”。
 
 ## 3. 实现调整
 

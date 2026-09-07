@@ -71,6 +71,7 @@ nonebot/src/infrastructure_plugins/_adapter/
 - `runtime.py`
   - 根据配置选择当前适配器实现。
 - 入口始终显式加载 `_adapter` 基础设施插件，不受业务插件白名单影响。
+- QQ 模式额外显式加载 `src.infrastructure_plugins.qq_command_panel`；OneBot 模式不加载。命令面板不参与业务插件发现，不应列入 `ENABLED_PLUGINS`。
 - 业务插件
   - 只导入 `infrastructure_plugins._adapter` 暴露的接口，不直接导入具体适配器。
 
