@@ -19,8 +19,7 @@ async def handle_people_count():
         await matcher.finish("检测人数中，请不要频繁查询。")
     async with busy:
         try:
-            count = await service.count_async()
-            counts = await service.machine_occupancy_async()
+            count, counts = await service.count_with_occupancy_async()
         except CounterError:
             await matcher.finish("人数检测失败，请检查摄像头连接、配置或模型。")
         message = f"音游房当前有 {count} 人。\n" + "当前已上机人数：\n" + "\n".join(

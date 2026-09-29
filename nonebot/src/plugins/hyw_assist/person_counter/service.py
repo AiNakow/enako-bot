@@ -98,10 +98,14 @@ class PeopleCounter:
                    for detection in self._detect(image, apply_regions))
 
     def _infer_machine_occupancy(self, image: Image.Image, apply_regions=True):
+        return self._infer_count_with_occupancy(image, apply_regions)[1]
+
+    def _infer_count_with_occupancy(self, image: Image.Image, apply_regions=True):
         if self.settings.machine_areas is None:
             raise CounterError("未配置音游机器游玩区域。")
         detections = self._detect(image, apply_regions)
-        return self.settings.machine_areas.count(detections, image.size)
+        count = sum(not detection["excluded"] for detection in detections)
+        return count, self.settings.machine_areas.count(detections, image.size)
 
     def count(self, camera: Camera | None = None) -> int:
         """抓取当前画面并返回人数；未检测到人为 0，失败抛 CounterError。"""
@@ -147,14 +151,26 @@ class PeopleCounter:
 
     def machine_occupancy(self, camera: Camera | None = None) -> dict[str, int]:
         """抓取默认机位并返回中二、舞萌左、舞萌右的上机人数。"""
+        return self.count_with_occupancy(camera)[1]
+
+    def count_with_occupancy(self, camera: Camera | None = None) -> tuple[int, dict[str, int]]:
+        """一次抓拍、一次推理，返回总人数和各机器上机人数；仅支持默认机位。"""
         with self._lock:
             self._check_open()
             self._load_model()
             target = camera or self.settings.camera
             if target != self.settings.camera:
                 raise CounterError("音游机器游玩区域仅对默认摄像头完成标定。")
+            if self.settings.machine_areas is None:
+                raise CounterError("未配置音游机器游玩区域。")
             data = self._capture.capture(target)
-            return self._process_bytes(data, self._infer_machine_occupancy)
+            return self._process_bytes(data, self._infer_count_with_occupancy)
+
+    async def count_with_occupancy_async(
+        self, camera: Camera | None = None,
+    ) -> tuple[int, dict[str, int]]:
+        """异步获取同一画面的总人数和上机人数，不阻塞事件循环。"""
+        return await asyncio.to_thread(self.count_with_occupancy, camera)
 
     def machine_occupancy_image(self, path: str | Path) -> dict[str, int]:
         """使用同机位本地图片离线验证各机器的上机人数。"""

@@ -85,6 +85,9 @@ async def your_existing_handler():
 occupancy = await service.machine_occupancy_async()
 # {"中二": 1, "舞萌左": 2, "舞萌右": 1}
 
+# 同时需要总人数和上机人数时，共用一次抓拍和一次模型推理：
+count, occupancy = await service.count_with_occupancy_async()
+
 # 如果要指定另一路摄像头：
 # count = await service.count_async(Camera("NVR序列号", 2))
 # 与默认摄像头不同的序列号/通道不应用默认玻璃标定，但仍做重复框去重。
@@ -112,6 +115,8 @@ nonebot.load_plugin("nonebot_people_counter.plugin")
 
 - `await service.count_async()`：返回当前图片的人数整数。未检测到人为 0，失败抛 `CounterError`。
 - `await service.machine_occupancy_async()`：返回 `{"中二": int, "舞萌左": int, "舞萌右": int}`，上限依次为 1、2、2。
+- `await service.count_with_occupancy_async()`：返回 `(总人数, 各机器上机人数)`，仅抓拍、解码、推理一次，两项统计共享过滤、去重后的检测结果；仅支持默认摄像头，失败抛 `CounterError`。`handle_people_count()` 使用此接口。
+- `service.count_with_occupancy()`：联合统计的同步版本。
 - `service.count()`：同步版本，不要直接在异步 handler 中执行。
 - `service.count_image(path)`：用本地同机位图片调试，避免消耗抓拍额度；这也是同步调用。
 - `service.machine_occupancy()` / `service.machine_occupancy_image(path)`：新增接口的同步和离线版本。
