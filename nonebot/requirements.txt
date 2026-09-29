@@ -52,3 +52,4 @@ onnxruntime==1.18.1
 opencv-python-headless==4.10.0.84
 numpy==1.26.4
 nonebot-plugin-waiter==0.8.1
+requests>=2.32.3,<3
