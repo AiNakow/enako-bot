@@ -1,6 +1,6 @@
 from typing import Any
 
-from nonebot.adapters.onebot.v11 import GroupMessageEvent, MessageSegment
+from nonebot.adapters.onebot.v11 import GroupMessageEvent, MessageSegment, PrivateMessageEvent
 
 
 class OneBotV11Bridge:
@@ -20,6 +20,9 @@ class OneBotV11Bridge:
 
     def is_group_event(self, event: Any) -> bool:
         return isinstance(event, GroupMessageEvent)
+
+    def is_private_event(self, event: Any) -> bool:
+        return isinstance(event, PrivateMessageEvent)
 
     def get_group_id(self, event: Any) -> str | None:
         group_id = getattr(event, "group_id", None)

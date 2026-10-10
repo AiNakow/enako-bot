@@ -10,7 +10,7 @@ import nonebot
 try:
     nonebot.get_driver()
 except ValueError:
-    nonebot.init(log_level="WARNING")
+    nonebot.init(_env_file=[], log_level="WARNING")
 
 
 PACKAGE_NAME = "gsz_assist_testpkg"

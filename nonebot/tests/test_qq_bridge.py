@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from src.infrastructure_plugins._adapter.qq import QQBridge
+from nonebot.adapters.qq import Message, MessageSegment
 
 
 class FakeEvent:
@@ -50,3 +51,14 @@ def test_missing_group_member_role_is_not_authorized() -> None:
     event = SimpleNamespace()
 
     assert QQBridge().is_group_admin_or_owner(event) is False
+
+
+def test_qq_bridge_images_mentions_and_user_ids() -> None:
+    bridge = QQBridge()
+    assert bridge.image_from_bytes(b"image").type == "file_image"
+    assert bridge.mention_user("123").type == "mention_user"
+    assert bridge.get_user_id(FakeEvent("123")) == "123"
+    assert bridge.get_mentioned_user_ids(SimpleNamespace(mentions=[SimpleNamespace(id="1"), SimpleNamespace(id="2")])) == ["1", "2"]
+    assert bridge.get_mentioned_user_ids(SimpleNamespace()) == []
+    assert bridge.extract_first_image_url(Message("text")) is None
+    assert bridge.extract_first_image_url(Message(MessageSegment.image("https://example.test/image.png"))) == "https://example.test/image.png"

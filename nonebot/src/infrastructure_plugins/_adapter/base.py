@@ -19,6 +19,9 @@ class AdapterBridge(Protocol):
     def is_group_event(self, event: Any) -> bool:
         ...
 
+    def is_private_event(self, event: Any) -> bool:
+        ...
+
     def get_group_id(self, event: Any) -> str | None:
         ...
 

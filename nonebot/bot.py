@@ -12,6 +12,7 @@ class PluginLoadingConfig(BaseModel):
 
 INFRASTRUCTURE_PLUGINS = {
     "_adapter": "src.infrastructure_plugins._adapter",
+    "group_config": "src.infrastructure_plugins.group_config",
 }
 
 QQ_INFRASTRUCTURE_PLUGINS = {
@@ -41,9 +42,12 @@ def _load_infrastructure_plugins(adapter: str) -> None:
 
 
 def _load_configured_business_plugins(adapter: str) -> None:
+    from src.infrastructure_plugins.group_config import initialize_group_config
+
+    local_common_plugins = _discover_plugins("src/plugins")
     common_plugins = {
         "nonebot_plugin_htmlrender": "nonebot_plugin_htmlrender",
-        **_discover_plugins("src/plugins"),
+        **local_common_plugins,
     }
     qq_plugins = _discover_plugins("src/qq_plugins")
     enabled_plugins = nonebot.get_plugin_config(
@@ -51,6 +55,8 @@ def _load_configured_business_plugins(adapter: str) -> None:
     ).enabled_plugins
 
     if enabled_plugins is not None:
+        if "group_config" in enabled_plugins:
+            raise RuntimeError("group_config cannot be selected in ENABLED_PLUGINS")
         unknown_plugins = (
             enabled_plugins
             - INFRASTRUCTURE_PLUGINS.keys()
@@ -65,9 +71,18 @@ def _load_configured_business_plugins(adapter: str) -> None:
     if adapter == "qq":
         available_plugins.update(qq_plugins)
 
-    for plugin_name, module_path in available_plugins.items():
-        if enabled_plugins is None or plugin_name in enabled_plugins:
-            nonebot.load_plugin(module_path)
+    selected_plugins = {
+        name: path for name, path in available_plugins.items()
+        if enabled_plugins is None or name in enabled_plugins
+    }
+    known_business_plugins = frozenset(local_common_plugins.keys() | qq_plugins.keys())
+    initialize_group_config(
+        known_business_plugins=known_business_plugins,
+        managed_business_plugins=frozenset(selected_plugins.keys() & known_business_plugins),
+    )
+    for plugin_name, module_path in selected_plugins.items():
+        if nonebot.load_plugin(module_path) is None:
+            raise RuntimeError(f"Failed to load selected plugin: {plugin_name}")
 
 
 nonebot.init()

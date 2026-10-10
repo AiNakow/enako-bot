@@ -1,6 +1,6 @@
 from typing import Any
 
-from nonebot.adapters.qq import GroupMessageCreateEvent, MessageSegment
+from nonebot.adapters.qq import C2CMessageCreateEvent, GroupMessageCreateEvent, MessageSegment
 
 
 class QQBridge:
@@ -26,6 +26,9 @@ class QQBridge:
 
     def is_group_event(self, event: Any) -> bool:
         return isinstance(event, GroupMessageCreateEvent)
+
+    def is_private_event(self, event: Any) -> bool:
+        return isinstance(event, C2CMessageCreateEvent)
 
     def get_group_id(self, event: Any) -> str | None:
         group_id = getattr(event, "group_id", None)

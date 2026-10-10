@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "插件分群开关配置",
+  "description": "本期仅包含群及机器人私聊开关。插件名是否已知、重复 JSON 键及文件编码由启动读取器另行校验。",
+  "type": "object",
+  "propertyNames": {
+    "type": "string",
+    "minLength": 1
+  },
+  "additionalProperties": {
+    "$ref": "#/$defs/pluginPolicy"
+  },
+  "$defs": {
+    "pluginPolicy": {
+      "type": "object",
+      "required": ["default_enabled", "private_enabled", "groups"],
+      "additionalProperties": false,
+      "properties": {
+        "default_enabled": {
+          "type": "boolean"
+        },
+        "private_enabled": {
+          "type": "boolean"
+        },
+        "groups": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^(qq:[^\\s:]{1,256}|onebot11:[1-9][0-9]{0,255})$",
+            "not": {
+              "pattern": "\\s"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/groupOverride"
+          }
+        }
+      }
+    },
+    "groupOverride": {
+      "type": "object",
+      "required": ["enabled"],
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

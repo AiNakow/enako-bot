@@ -1,0 +1,31 @@
+{
+  "hyw_assist": {
+    "default_enabled": false,
+    "private_enabled": false,
+    "groups": {
+      "qq:group_a": {"enabled": true},
+      "qq:group_b": {"enabled": true},
+      "qq:group_c": {"enabled": false},
+      "onebot11:123456789": {"enabled": true}
+    }
+  },
+  "mahjong-assist": {
+    "default_enabled": true,
+    "private_enabled": true,
+    "groups": {
+      "qq:group_b": {"enabled": false}
+    }
+  },
+  "gsz-assist": {
+    "default_enabled": true,
+    "private_enabled": true,
+    "groups": {
+      "qq:group_c": {"enabled": false}
+    }
+  },
+  "bot_assist": {
+    "default_enabled": true,
+    "private_enabled": true,
+    "groups": {}
+  }
+}
