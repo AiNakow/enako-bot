@@ -1,5 +1,7 @@
 # 插件分群开关升级方案
 
+> 状态：**已完成并归档**。确认及归档日期：2026-10-17。代码实现及本地自动化验收已完成，用户现确认真实环境验证完成并要求归档；据此关闭此前的线上验收与部署待办，移入 `archive/plans/`，完成记录见[验收记录](../acceptance/group-config-upgrade-acceptance.md)。正文保留历史实施约定，“待实现”等描述指方案编写时的状态。本次更新记录用户完成确认，未重新执行测试或部署。
+
 ## 1. 已确认的范围
 
 本文件是本次升级的实施约定，示例及 Schema 均属于待实现的配置格式，当前机器人尚未读取它们。
@@ -65,7 +67,7 @@ nonebot/
 
 ## 4. JSON 字段契约
 
-完整示例见 [examples/group_config.json](examples/group_config.json)，结构约束见 [schemas/group_config.schema.json](schemas/group_config.schema.json)。实现以本节的字段及语义为准；Schema 补充机器可读的结构约束。
+完整示例见 [../../examples/group_config.json](../../examples/group_config.json)，结构约束见 [../../schemas/group_config.schema.json](../../schemas/group_config.schema.json)。实现以本节的字段及语义为准；Schema 补充机器可读的结构约束。
 
 ### 4.1 顶层
 
@@ -339,7 +341,7 @@ QQ 指令面板继续同步已加载命令的全局列表：本期不保证禁�
 ## 11. 部署与迁移操作
 
 1. 准备发布版本，同时备份现有 `.env`；现有数据库不需要迁移。
-2. 从 [examples/group_config.json](examples/group_config.json) 复制文件到宿主机 `/opt/bot-data/plugin_data/group_config.json`，替换群标识并确定开关。
+2. 从 [../../examples/group_config.json](../../examples/group_config.json) 复制文件到宿主机 `/opt/bot-data/plugin_data/group_config.json`，替换群标识并确定开关。
 3. 群 ID 使用现有桥实际读取的 `group_id`；QQ 可从已有原始群事件日志核对对应字段，OneBot 使用实际群号。`group_openid` 和群名称均不能替代。
 4. `.env` 可显式加入 `GROUP_CONFIG_FILE=/app/plugin_data/group_config.json`；保留现有单摄像头 `PEOPLE_COUNTER_*`、全局 `INPUT_IMG_SIZE` 及业务加载选择。旧的摄像头字段没有被替换，不需要新凭据集合。
 5. 升级镜像并重启 `nonebot` 服务。文件必须在新进程启动前存在；默认文件缺失会阻止启动。

@@ -91,7 +91,7 @@ GROUP_CONFIG_FILE=/app/plugin_data/group_config.json
 - `private_enabled`：机器人私聊是否允许响应，与群开关独立。
 - `groups`：群覆盖项，只允许必填的 `enabled`；显式群开关覆盖默认值。
 
-未配置的业务插件保持原行为。布尔值只接受 `true` / `false`，不接受数字、字符串或 `null`。不接受额外字段，包括 `config`、`credential_ref`、`channel_enabled`，也没有 `version`、`defaults`、`plugins`、`$schema` 包裹层。基础插件和第三方依赖不能作为受控插件填写。参见 [Schema](docs/schemas/group_config.schema.json) 和 [升级方案](docs/group-config-upgrade-plan.md)。
+未配置的业务插件保持原行为。布尔值只接受 `true` / `false`，不接受数字、字符串或 `null`。不接受额外字段，包括 `config`、`credential_ref`、`channel_enabled`，也没有 `version`、`defaults`、`plugins`、`$schema` 包裹层。基础插件和第三方依赖不能作为受控插件填写。参见 [Schema](docs/schemas/group_config.schema.json)、[已归档升级方案](docs/archive/plans/group-config-upgrade-plan.md)和[文档索引](docs/README.md)。
 
 群键格式只能是 `qq:<group_id>` 或 `onebot11:<group_id>`，区分大小写。QQ ID 是桥从实际群事件读取的 `group_id`，可从已有原始事件日志核对；不能用 `group_openid`、群名称或普通 QQ 群号代替。QQ 后缀长度 1～256，禁止空白和冒号。OneBot 后缀使用实际群号，只允许 ASCII 十进制数字，首位为 1～9，无前导零，长度 1～256。不同适配器的条目可以共存；同一进程的机器人账号共享策略。
 
