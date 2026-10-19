@@ -33,7 +33,8 @@ docs/
 
 | 文档 | 状态与下一步 |
 |---|---|
-| [hyw_assist 后台数据接入与功能扩展方案](pending-confirmation/hyw-assist-backend-integration-plan.md) | 待用户确认，未实现；Q01～Q15 为待确认事项，R01～R10 为待补充资料，第 14 节提供回复模板 |
+| [hyw_assist 每店配置与进出场计费方案](pending-confirmation/hyw-assist-store-billing-plan.md) | 当前主要方案，2026-10-19 讨论结果已落盘，未实现；包含每店配置、累计计费公式、封顶归属、金额样例及分阶段验收，区分已确认规则与方案解释 |
+| [hyw_assist 后台数据接入与功能扩展方案](pending-confirmation/hyw-assist-backend-integration-plan.md) | 原始讨论留存，范围已收敛至上述方案；不再并行维护，不再要求按原 Q01～Q15 清单逐项确认 |
 
 ## 进行中计划
 
