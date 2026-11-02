@@ -1,4 +1,10 @@
-# 复制到 NoneBot 的人数统计服务
+# hyw_assist 人数统计与会员查询
+
+本项目的会员模块 `hyw_membership.py` 已适配为接收 `group_config` 门店快照：`BackendConfig.from_store(store_id, store_snapshot)`，不自行读取 JSON、环境变量或交互输入。门店的 `backend` 必须包含 `base_url`、`username`、`password`、`timeout_seconds`、`allow_http`；凭据三项全为 `null` 时返回 `None`，完整填写时生成只读查询配置。超时模板15秒，HTTP地址须显式设置 `allow_http=true`，密码使用 `SecretStr`。
+
+已有调用方获得门店快照后，异步服务以 `await asyncio.to_thread(fetch_member_discounts, backend_config, card_number)` 调用同步查询。返回值包含 `store_id`、原卡号、后台姓名/类别/状态/到期日、`cap_multiplier` 和 `billing_multiplier`。状态和到期信息不限制折扣；两种系数分别作用于三个封顶和小时单价，会员模块本身不计算金额。查询失败抛出明确异常，不能当作未配置或返回默认折扣。
+
+本轮完成范围为模块适配及本机HTTP登录/分页/折扣链路测试。正式 `stores` 读取、消息编排、有效价格转换及核心0价格支持尚待实现，不能直接把目标配置写入现行群配置。完整结构、协议、折扣规则、测试结果及待办见[自动计费接入方案](../../../../docs/in-progress/plans/hyw-assist-auto-cost-plan.md)。以下人数统计说明保留其原有使用方式。
 
 这是一个普通 Python 目录，不是安装包。包含抓拍、YOLO26n ONNX 模型、玻璃区域过滤、重复框去重、三台音游机器上机人数统计、NoneBot 配置适配和可选示例插件。不含真实凭据、监控照片、运行结果或虚拟环境。
 

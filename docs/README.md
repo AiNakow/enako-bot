@@ -8,7 +8,7 @@
 docs/
 ├── README.md                    # 统一入口、文档状态和分类规则
 ├── pending-confirmation/         # 待用户确认、尚未开始实施的方案
-├── in-progress/                 # 进行中分类，当前无文档；有新实施任务时使用
+├── in-progress/                 # 已开始实施、尚未完成验收的文档
 │   ├── plans/                   # 已开展但实施／验收尚未闭环的计划
 │   └── acceptance/              # 分阶段验收及仍有未执行项的验收记录
 ├── archive/                     # 实施与验收已闭环或已明确终止的历史文档
@@ -33,12 +33,16 @@ docs/
 
 | 文档 | 状态与下一步 |
 |---|---|
-| [hyw_assist 每店配置与进出场计费方案](pending-confirmation/hyw-assist-store-billing-plan.md) | 当前主要方案，2026-10-19 讨论结果已落盘，未实现；包含每店配置、累计计费公式、封顶归属、金额样例及分阶段验收，区分已确认规则与方案解释 |
-| [hyw_assist 后台数据接入与功能扩展方案](pending-confirmation/hyw-assist-backend-integration-plan.md) | 原始讨论留存，范围已收敛至上述方案；不再并行维护，不再要求按原 Q01～Q15 清单逐项确认 |
+| [hyw_assist 每店配置与进出场计费旧方案](pending-confirmation/hyw-assist-store-billing-plan.md) | 历史讨论留存，2026-11-02 由自动计费接入方案取代；旧配置位置、取整公式及后台接入要求不作为本期实施依据 |
+| [hyw_assist 后台数据接入与功能扩展旧方案](pending-confirmation/hyw-assist-backend-integration-plan.md) | 原始讨论留存，后续范围以自动计费接入方案为准；不并行维护正文，不要求按原 Q01～Q15 清单逐项确认 |
+
+两份旧方案保留原路径作为需求演变背景，仅维护状态和当前方案链接。当前方案因会员模块配置适配已开始实施，移入下方进行中目录；自动计费主体和真实消息验收仍待完成。
 
 ## 进行中计划
 
-当前无进行中计划。
+| 文档 | 当前状态与下一步 |
+|---|---|
+| [hyw_assist 出场消息自动计费接入方案](in-progress/plans/hyw-assist-auto-cost-plan.md) | 当前唯一实施方案，用户已确认12项约束；stores 门店配置＋群绑定，会员模块配置适配及本地HTTP链路105项测试通过，行100%、分支98.08%；配置/加载回归159项通过。正式配置读取、折扣接入、核心0价格、自动计费主体及真实验收待实施 |
 
 ## 进行中验收
 
